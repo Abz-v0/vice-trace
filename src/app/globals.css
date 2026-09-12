@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050505;
+  --foreground: #00ff9d;
 }
 
 @theme inline {
@@ -12,15 +12,108 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono), monospace;
+  overflow-x: hidden;
+}
+
+/* Optimized CRT Scanline Effect (Fixed z-index so it doesn't block Unlayer) */
+.crt-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.crt-effect::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+  z-index: 2; /* Lowered from 9999 so Unlayer dropdowns appear on top */
+  background-size: 100% 3px;
+  pointer-events: none;
+}
+
+.crt-effect::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: rgba(18, 16, 16, 0.05);
+  z-index: 2; /* Lowered to match */
+  pointer-events: none;
+  animation: scan 6s linear infinite;
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Glitch Transition for Screen Changes */
+@keyframes glitchTransition {
+  0% { opacity: 0; transform: translateX(-10px); filter: hue-rotate(90deg); }
+  50% { opacity: 1; transform: translateX(10px); filter: hue-rotate(180deg); }
+  100% { opacity: 1; transform: translateX(0); filter: hue-rotate(0deg); }
+}
+
+.glitch-in {
+  animation: glitchTransition 0.4s ease-in-out;
+}
+
+/* Progress Bar Fill Animation */
+@keyframes fillBar {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+/* Custom Scrollbar for that retro feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+::-webkit-scrollbar-thumb {
+  background: #00ff9d;
+  border-radius: 0;
+}
+/* Glitch Animation for Title */
+@keyframes glitch {
+  0% { transform: translate(0); text-shadow: 2px 0 #ff00c1, -2px 0 #00fff9; }
+  20% { transform: translate(-2px, 2px); text-shadow: -2px 0 #ff00c1, 2px 0 #00fff9; }
+  40% { transform: translate(-2px, -2px); text-shadow: 2px 0 #ff00c1, -2px 0 #00fff9; }
+  60% { transform: translate(2px, 2px); text-shadow: -2px 0 #ff00c1, 2px 0 #00fff9; }
+  80% { transform: translate(2px, -2px); text-shadow: 2px 0 #ff00c1, -2px 0 #00fff9; }
+  100% { transform: translate(0); text-shadow: 2px 0 #ff00c1, -2px 0 #00fff9; }
+}
+
+.glitch-text {
+  animation: glitch 2s infinite;
+}
+
+/* Button press animation */
+.btn-press:active {
+  transform: scale(0.97);
+}
+/* Custom Crosshair Cursor for the Editor */
+.spy-cursor {
+  cursor: crosshair;
+}
+
+/* Custom crosshair when hovering over buttons */
+.btn-press {
+  cursor: pointer;
+}
+
+/* Cinematic Fade In */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 1.5s ease-in-out;
 }
