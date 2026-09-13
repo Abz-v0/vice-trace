@@ -18,6 +18,42 @@ export default function Home() {
   const [isMuted, setIsMuted] = useState(true);
   const [evidenceImage, setEvidenceImage] = useState("/evidence1.jpg");
   const [bootLines, setBootLines] = useState([]);
+  const staticHumRef = useRef(null);
+
+  // --- AMBIENT STATIC HUM (CRT terminal atmosphere) ---
+  const startStaticHum = () => {
+    if (staticHumRef.current) return; // already running
+    if (typeof window === 'undefined') return;
+    if (!window.audioCtx) {
+      window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const ctx = window.audioCtx;
+    const bufferSize = 2 * ctx.sampleRate; // 2 seconds of noise
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    noise.loop = true;
+
+    // Shape it: bandpass filter to sound like CRT static, not white noise
+    const bandpass = ctx.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    bandpass.frequency.value = 800;
+    bandpass.Q.value = 0.5;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.012; // very subtle
+
+    noise.connect(bandpass);
+    bandpass.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start();
+
+    staticHumRef.current = { noise, gain };
+  };
 
   // --- OPTIMIZED SOUND API LOGIC ---
   const playSound = (type) => {
@@ -136,8 +172,8 @@ export default function Home() {
     }, 3000); 
   };
 
-  // Enter key support
-  const handleNameKeyPress = (e) => {
+  // Enter key support (onKeyDown — onKeyPress is deprecated)
+  const handleNameKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleAccessFile();
     }
@@ -196,7 +232,7 @@ export default function Home() {
   const renderScreen = () => {
     if (gameState === 'start') {
       return (
-        <main className="crt-effect min-h-screen bg-black bg-cover bg-center flex flex-col items-center justify-center p-8 cursor-pointer" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('/bg.jpg')" }} onClick={() => { fadeAudioIn(); setGameState('booting'); }}>
+        <main className="crt-effect min-h-screen bg-black bg-cover bg-center flex flex-col items-center justify-center p-8 cursor-pointer" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('/bg.jpg')" }} onClick={() => { fadeAudioIn(); startStaticHum(); setGameState('booting'); }}>
           <div className="text-center">
             <h1 className="text-4xl sm:text-6xl font-bold text-cyan-400 tracking-widest glitch-text mb-8">VICE//TRACE</h1>
             <p className="text-xl text-pink-500 animate-pulse">[ CLICK TO INITIALIZE TERMINAL ]</p>
@@ -245,7 +281,7 @@ export default function Home() {
                 type="text" 
                 value={inputName}
                 onChange={(e) => setInputName(e.target.value)}
-                onKeyPress={handleNameKeyPress} // Enter key support
+                onKeyDown={handleNameKeyDown} // Enter key support
                 placeholder="ENTER YOUR NAME..."
                 className="w-full bg-zinc-900 border border-cyan-500/50 text-white px-3 py-2 focus:outline-none focus:border-pink-500"
               />
@@ -339,17 +375,17 @@ export default function Home() {
             <span className="text-pink-500 animate-pulse">●</span> VICE//TRACE :: EVIDENCE_VIEWER.exe
           </h1>
           <div className="flex flex-wrap justify-center gap-2 items-center">
-            <button onClick={toggleMute} className="btn-press text-[10px] sm:text-xs text-xs text-cyan-400 hover:text-white border border-cyan-500/50 hover:border-cyan-500 px-2 py-1 transition-colors mr-2" aria-label="Toggle Music">[ {isMuted ? 'UNMUTE MUSIC' : 'MUTE MUSIC'} ]</button>
+            <button onClick={toggleMute} className="btn-press text-[10px] sm:text-xs text-cyan-400 hover:text-white border border-cyan-500/50 hover:border-cyan-500 px-2 py-1 transition-colors mr-2" aria-label="Toggle Music">[ {isMuted ? 'UNMUTE MUSIC' : 'MUTE MUSIC'} ]</button>
 
             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleUploadNew} className="hidden" />
             <button onClick={() => { playSound('click'); fileInputRef.current?.click(); }} className="btn-press text-xs text-green-400 hover:text-white border border-green-500/50 hover:border-green-500 px-2 py-1 transition-colors" aria-label="Upload New Evidence">[ UPLOAD NEW EVIDENCE ]</button>
 
-            <button onClick={handleResetEvidence} className="btn-press text-[10px] sm:text-xs text-xs text-yellow-500 hover:text-white border border-yellow-500/50 hover:border-yellow-500 px-2 py-1 transition-colors" aria-label="Reset Evidence">[ RESET EVIDENCE ]</button>
-            <button onClick={() => { playSound('click'); setGameState('briefing'); }} className="btn-press text-[10px] sm:text-xs text-xs text-zinc-400 hover:text-red-500 border border-zinc-600 hover:border-red-500 px-2 py-1 transition-colors" aria-label="Close File">[ X CLOSE FILE ]</button>
+            <button onClick={handleResetEvidence} className="btn-press text-[10px] sm:text-xs text-yellow-500 hover:text-white border border-yellow-500/50 hover:border-yellow-500 px-2 py-1 transition-colors" aria-label="Reset Evidence">[ RESET EVIDENCE ]</button>
+            <button onClick={() => { playSound('click'); setGameState('briefing'); }} className="btn-press text-[10px] sm:text-xs text-zinc-400 hover:text-red-500 border border-zinc-600 hover:border-red-500 px-2 py-1 transition-colors" aria-label="Close File">[ X CLOSE FILE ]</button>
           </div>
         </header>
 
-        <div className="spy-cursor w-full p-2 border-2 border-cyan-500/30 rounded-lg shadow-[0_0_25px_rgba(34,211,238,0.15)] bg-black/50" style={{ height: '70vh', minHeight: '400px' }}>
+        <div className="spy-cursor w-full p-2 border-2 border-cyan-500/30 rounded-lg shadow-[0_0_25px_rgba(34,211,238,0.15)] bg-black/50" style={{ height: '70vh', resize: 'vertical', overflow: 'auto', minHeight: '400px' }}>
           <ImageEditor 
             ref={editorRef}
             image={evidenceImage}  
