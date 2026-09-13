@@ -17,6 +17,7 @@ export const metadata = {
     description: 'An interactive detective micro-game powered by the Unlayer React Image Editor. Inspect evidence. Find what was changed. Close the case.',
     type: 'website',
     siteName: 'VICE//TRACE',
+    images: [{ url: '/screenshot.png', width: 1200, height: 630, alt: 'VICE//TRACE — A GTA VI-Inspired Detective Game' }],
   },
   twitter: {
     card: 'summary_large_image',

@@ -45,7 +45,7 @@ The Unlayer editor is the **core gameplay mechanic**, not just a decorative tool
 ## 🚀 Run Locally
 1. Clone the repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/vice-trace.git
+   git clone https://github.com/Abz-v0/vice-trace.git
    ```
 2. Navigate to the project directory:
    ```bash
