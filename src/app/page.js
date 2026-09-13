@@ -198,7 +198,7 @@ export default function Home() {
       return (
         <main className="crt-effect min-h-screen bg-black bg-cover bg-center flex flex-col items-center justify-center p-8 cursor-pointer" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('/bg.jpg')" }} onClick={() => { fadeAudioIn(); setGameState('booting'); }}>
           <div className="text-center">
-            <h1 className="text-6xl font-bold text-cyan-400 tracking-widest glitch-text mb-8">VICE//TRACE</h1>
+            <h1 className="text-4xl sm:text-6xl font-bold text-cyan-400 tracking-widest glitch-text mb-8">VICE//TRACE</h1>
             <p className="text-xl text-pink-500 animate-pulse">[ CLICK TO INITIALIZE TERMINAL ]</p>
           </div>
         </main>
@@ -334,22 +334,22 @@ export default function Home() {
     // EDITOR STATE
     return (
       <main className="crt-effect glitch-in min-h-screen bg-zinc-950 bg-cover bg-center text-white flex flex-col p-4" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)), url('/bg.jpg')" }}>
-        <header className="flex justify-between items-center mb-4 border-b-2 border-cyan-500/50 pb-2 px-2 z-10">
-          <h1 className="text-xl text-cyan-400 tracking-widest flex items-center gap-2">
+        <header className="flex flex-col sm:flex-row justify-between items-center mb-4 border-b-2 border-cyan-500/50 pb-2 px-2 z-10 gap-2">
+          <h1 className="text-sm sm:text-xl text-cyan-400 tracking-widest flex items-center gap-2">
             <span className="text-pink-500 animate-pulse">●</span> VICE//TRACE :: EVIDENCE_VIEWER.exe
           </h1>
-          <div className="flex gap-2 items-center">
-            <button onClick={toggleMute} className="btn-press text-xs text-cyan-400 hover:text-white border border-cyan-500/50 hover:border-cyan-500 px-2 py-1 transition-colors mr-2" aria-label="Toggle Music">[ {isMuted ? 'UNMUTE MUSIC' : 'MUTE MUSIC'} ]</button>
+          <div className="flex flex-wrap justify-center gap-2 items-center">
+            <button onClick={toggleMute} className="btn-press text-[10px] sm:text-xs text-xs text-cyan-400 hover:text-white border border-cyan-500/50 hover:border-cyan-500 px-2 py-1 transition-colors mr-2" aria-label="Toggle Music">[ {isMuted ? 'UNMUTE MUSIC' : 'MUTE MUSIC'} ]</button>
 
             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleUploadNew} className="hidden" />
             <button onClick={() => { playSound('click'); fileInputRef.current?.click(); }} className="btn-press text-xs text-green-400 hover:text-white border border-green-500/50 hover:border-green-500 px-2 py-1 transition-colors" aria-label="Upload New Evidence">[ UPLOAD NEW EVIDENCE ]</button>
 
-            <button onClick={handleResetEvidence} className="btn-press text-xs text-yellow-500 hover:text-white border border-yellow-500/50 hover:border-yellow-500 px-2 py-1 transition-colors" aria-label="Reset Evidence">[ RESET EVIDENCE ]</button>
-            <button onClick={() => { playSound('click'); setGameState('briefing'); }} className="btn-press text-xs text-zinc-400 hover:text-red-500 border border-zinc-600 hover:border-red-500 px-2 py-1 transition-colors" aria-label="Close File">[ X CLOSE FILE ]</button>
+            <button onClick={handleResetEvidence} className="btn-press text-[10px] sm:text-xs text-xs text-yellow-500 hover:text-white border border-yellow-500/50 hover:border-yellow-500 px-2 py-1 transition-colors" aria-label="Reset Evidence">[ RESET EVIDENCE ]</button>
+            <button onClick={() => { playSound('click'); setGameState('briefing'); }} className="btn-press text-[10px] sm:text-xs text-xs text-zinc-400 hover:text-red-500 border border-zinc-600 hover:border-red-500 px-2 py-1 transition-colors" aria-label="Close File">[ X CLOSE FILE ]</button>
           </div>
         </header>
 
-        <div className="spy-cursor w-full p-2 border-2 border-cyan-500/30 rounded-lg shadow-[0_0_25px_rgba(34,211,238,0.15)] bg-black/50" style={{ height: '85vh', resize: 'vertical', overflow: 'auto', minHeight: '400px' }}>
+        <div className="spy-cursor w-full p-2 border-2 border-cyan-500/30 rounded-lg shadow-[0_0_25px_rgba(34,211,238,0.15)] bg-black/50" style={{ height: '70vh', minHeight: '400px' }}>
           <ImageEditor 
             ref={editorRef}
             image={evidenceImage}  
@@ -390,7 +390,7 @@ export default function Home() {
           />
         </div>
         
-        <footer className="mt-4 flex justify-between text-xs text-cyan-200/50 px-2 z-10">
+        <footer className="mt-4 flex flex-col sm:flex-row justify-center sm:justify-between text-center text-xs text-cyan-200/50 px-2 z-10 gap-1">
           <span>VCPD TERMINAL v1.0.4</span>
           <span className="animate-pulse">CONNECTION SECURE // LOGGING ACTIVITY</span>
           <span>USER: DETECTIVE_{userName}</span>
