@@ -485,8 +485,9 @@ export default function Home() {
               image={evidenceImage}  
               minHeight="100%" 
               options={{
-                projectId: 289525, // <--- YOUR PROJECT ID ADDED HERE
+                projectId: 289525, // <--- PROJECT ID ADDED HERE
                 theme: 'dark',
+                defaultPrompt: "You are a VCPD Forensic AI Assistant. Help the detective enhance, inspect, and find the altered timestamp in this evidence photo.",
                 features: {
                   imageEditor: {
                     dock: 'left', 
