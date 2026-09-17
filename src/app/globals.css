@@ -15,7 +15,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-mono), monospace;
+  font-family: inherit;
   overflow-x: hidden;
 }
 
@@ -116,4 +116,18 @@ body {
 
 .fade-in {
   animation: fadeIn 1.5s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+
+  .crt-effect::after {
+    display: none;
+  }
 }

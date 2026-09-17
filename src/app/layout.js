@@ -8,6 +8,7 @@ const techMono = Share_Tech_Mono({
 });
 
 export const metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: 'VICE//TRACE — A GTA VI-Inspired Detective Game | Built with Unlayer Image Editor',
   description: 'Step into the shoes of a Vice City detective. Inspect tampered crime scene photos using the Unlayer Image Editor, find the lie, and close the case. An interactive narrative micro-game built for the #BuiltWithImageEditor challenge.',
   keywords: ['GTA VI', 'Vice City', 'detective game', 'image editor', 'Unlayer', 'BuiltWithImageEditor', 'interactive narrative', 'Next.js'],
