@@ -62,6 +62,89 @@ const CASES = {
     findings: 'Correct. The reflected silhouette was composited into the water to place a witness at the marina.',
     solution: 'The dock was empty when the camera recorded the scene. The fabricated reflection was used to support a false witness statement and protect the boat owner.',
   },
+  courier: {
+    id: '003',
+    title: 'The Courier’s Double',
+    location: 'SEABREEZE MARKET // CAM_19',
+    image: '/evidence3.jpg',
+    objective: 'Compare the two red delivery scooters. ZOOM in, mark the repeated details, and export the exhibit.',
+    recoveryPrompt: 'Confirm the item that was duplicated to fabricate the courier’s route.',
+    recoveryAnswer: 'scooter',
+    recoveryPlaceholder: 'e.g. scooter',
+    evidenceHint: 'Compare the foreground red scooter with the red scooter beneath the market awning.',
+    hints: [
+      'There are two red scooters, but there should only be one courier vehicle in this delivery zone.',
+      'ZOOM into the cargo bags, saddle damage, and rear hardware on both scooters.',
+      'The second red scooter is a clone: its blue bag and unique damage repeat exactly.',
+    ],
+    accusationPrompt: 'The duplicate vehicle has been verified. Identify the manipulation used to falsify the delivery route.',
+    choices: [
+      'A second red delivery scooter was digitally cloned into the surveillance frame.',
+      'The waterfront lights were recolored to hide a warning signal.',
+      'The market shutters were opened to create a false entry point.',
+    ],
+    correctChoice: 0,
+    findings: 'Correct. A second delivery scooter was cloned into the frame to make one courier appear to be in two places at once.',
+    solution: 'The duplicate was used to validate an impossible delivery route. The real courier could not have reached the second pickup point in time.',
+  },
+  penthouse: {
+    id: '004',
+    title: 'The Penthouse Alibi',
+    location: 'HORIZON TOWER // CAM_27',
+    image: '/evidence4.jpg',
+    objective: 'Inspect the terrace floor. Enhance contrast and compare the potted palm’s shadow with the other objects before exporting your exhibit.',
+    recoveryPrompt: 'Confirm which object casts the impossible shadow.',
+    recoveryAnswer: 'palm',
+    recoveryPlaceholder: 'e.g. palm',
+    evidenceHint: 'The sunrise is on the right. Compare the potted palm’s shadow with the chair and table shadows.',
+    hints: [
+      'Use the sun as a reference point: every genuine shadow should fall away from it.',
+      'The lounge chair and table follow the morning light. One plant does not.',
+      'The potted palm’s shadow points toward the sunrise, so it was composited into the image.',
+    ],
+    accusationPrompt: 'The lighting anomaly has been verified. Identify the alteration used to support the penthouse alibi.',
+    choices: [
+      'The potted palm’s shadow was composited in the wrong direction to falsify the time of the image.',
+      'The pool water was recolored to conceal chemical evidence.',
+      'The skyline was digitally moved closer to the terrace.',
+    ],
+    correctChoice: 0,
+    findings: 'Correct. The palm shadow was altered to make the image appear to have been recorded later in the morning.',
+    solution: 'The genuine sunrise direction proves the photo was taken before the suspect’s claimed arrival. The altered shadow was meant to manufacture a later timestamp without changing the camera overlay.',
+  },
+  manifest: {
+    id: '005',
+    title: 'The Missing Manifest',
+    location: 'PORT ARCADIA // EVIDENCE DESK',
+    image: '/evidence5.jpg',
+    objective: 'Enhance the folded manifest on the desk. Isolate the faint route code beneath the folded corner and export your exhibit.',
+    recoveryPrompt: 'Enter the recovered container route code.',
+    recoveryAnswer: 'LT47',
+    recoveryPlaceholder: 'e.g. LT-47',
+    evidenceHint: 'The code is written on the manifest beneath the folded corner, beside the flashlight.',
+    hints: [
+      'The warehouse yard is a distraction. Focus on the paperwork under the desk lamp.',
+      'Increase brightness only slightly; the folded corner hides a faint two-letter, two-number route code.',
+      'The recovered route code is LT-47.',
+    ],
+    accusationPrompt: 'The route code has been recovered. Identify what was concealed in the warehouse evidence.',
+    choices: [
+      'The route code on the shipping manifest was hidden to divert a container from the official records.',
+      'The cargo vessel was removed from the harbor background.',
+      'The flashlight was duplicated to make the office look occupied.',
+    ],
+    correctChoice: 0,
+    findings: 'Correct. The concealed route code exposed a container diversion that never appeared in the official shipping record.',
+    solution: 'Route LT-47 directed the container away from Port Arcadia’s inspection lane. The folded corner was used to obscure the only surviving record of the diversion.',
+  },
+};
+
+const CASE_SUMMARIES = {
+  metro: 'Recover a falsified surveillance timestamp.',
+  marina: 'Expose an impossible reflection in the marina water.',
+  courier: 'Prove a courier vehicle was digitally duplicated.',
+  penthouse: 'Find the shadow that contradicts the sunrise.',
+  manifest: 'Recover a concealed container route code.',
 };
 
 const loadDetectiveRecord = () => {
@@ -263,7 +346,7 @@ export default function Home() {
 
   const prepareCaseEvidence = (caseKey) => {
     const caseFile = CASES[caseKey];
-    if (caseKey !== 'marina' || typeof window === 'undefined') {
+    if (!['marina', 'penthouse', 'manifest'].includes(caseKey) || typeof window === 'undefined') {
       setEvidenceImage(caseFile.image);
       return;
     }
@@ -276,21 +359,51 @@ export default function Home() {
       const context = canvas.getContext('2d');
       context.drawImage(sourceImage, 0, 0);
 
-      // Deliberate evidence tamper: a faint figure exists only in the water reflection.
-      const reflectionX = canvas.width * 0.56;
-      const reflectionY = canvas.height * 0.74;
-      context.save();
-      context.globalAlpha = 0.32;
-      context.filter = 'blur(2px)';
-      context.fillStyle = '#d8b85b';
-      context.beginPath();
-      context.ellipse(reflectionX, reflectionY, canvas.width * 0.008, canvas.height * 0.015, 0, 0, Math.PI * 2);
-      context.fill();
-      context.fillRect(reflectionX - canvas.width * 0.009, reflectionY + canvas.height * 0.01, canvas.width * 0.018, canvas.height * 0.09);
-      context.globalAlpha = 0.2;
-      context.fillRect(reflectionX - canvas.width * 0.018, reflectionY + canvas.height * 0.11, canvas.width * 0.036, canvas.height * 0.008);
-      context.fillRect(reflectionX - canvas.width * 0.013, reflectionY + canvas.height * 0.14, canvas.width * 0.026, canvas.height * 0.006);
-      context.restore();
+      if (caseKey === 'marina') {
+        // Deliberate evidence tamper: a faint figure exists only in the water reflection.
+        const reflectionX = canvas.width * 0.56;
+        const reflectionY = canvas.height * 0.74;
+        context.save();
+        context.globalAlpha = 0.32;
+        context.filter = 'blur(2px)';
+        context.fillStyle = '#d8b85b';
+        context.beginPath();
+        context.ellipse(reflectionX, reflectionY, canvas.width * 0.008, canvas.height * 0.015, 0, 0, Math.PI * 2);
+        context.fill();
+        context.fillRect(reflectionX - canvas.width * 0.009, reflectionY + canvas.height * 0.01, canvas.width * 0.018, canvas.height * 0.09);
+        context.globalAlpha = 0.2;
+        context.fillRect(reflectionX - canvas.width * 0.018, reflectionY + canvas.height * 0.11, canvas.width * 0.036, canvas.height * 0.008);
+        context.fillRect(reflectionX - canvas.width * 0.013, reflectionY + canvas.height * 0.14, canvas.width * 0.026, canvas.height * 0.006);
+        context.restore();
+      }
+
+      if (caseKey === 'penthouse') {
+        // Deliberate evidence tamper: a palm shadow points back toward the sunrise.
+        context.save();
+        context.globalAlpha = 0.2;
+        context.filter = 'blur(4px)';
+        context.fillStyle = '#2b1a0e';
+        context.beginPath();
+        context.moveTo(canvas.width * 0.39, canvas.height * 0.52);
+        context.bezierCurveTo(canvas.width * 0.47, canvas.height * 0.54, canvas.width * 0.54, canvas.height * 0.59, canvas.width * 0.58, canvas.height * 0.66);
+        context.lineTo(canvas.width * 0.5, canvas.height * 0.61);
+        context.lineTo(canvas.width * 0.42, canvas.height * 0.57);
+        context.closePath();
+        context.fill();
+        context.restore();
+      }
+
+      if (caseKey === 'manifest') {
+        // Deliberate evidence tamper: a faint route code is concealed on the folded manifest.
+        context.save();
+        context.globalAlpha = 0.48;
+        context.filter = 'blur(0.35px)';
+        context.fillStyle = '#342418';
+        context.font = `${Math.round(canvas.width * 0.018)}px Georgia, serif`;
+        context.rotate(-0.09);
+        context.fillText('LT-47', canvas.width * 0.47, canvas.height * 0.74);
+        context.restore();
+      }
 
       setEvidenceImage(canvas.toDataURL('image/jpeg', 0.92));
     };
@@ -493,13 +606,13 @@ export default function Home() {
                 <h1 className="mt-1 text-3xl font-bold tracking-widest text-cyan-400 sm:text-4xl">VICE//TRACE</h1>
               </div>
               <div className="grid grid-cols-3 border border-cyan-500/30 text-center text-[10px] sm:text-xs">
-                <span className="border-r border-cyan-500/30 px-3 py-2"><strong className="block text-cyan-300">CLOSED</strong>{completedCases}/2</span>
+                <span className="border-r border-cyan-500/30 px-3 py-2"><strong className="block text-cyan-300">CLOSED</strong>{completedCases}/{Object.keys(CASES).length}</span>
                 <span className="border-r border-cyan-500/30 px-3 py-2"><strong className="block text-cyan-300">AVG SCORE</strong>{averageScore || '--'}</span>
                 <span className="px-3 py-2"><strong className="block text-pink-400">RANK</strong>{completedCases ? getRank(averageScore) : 'UNRANKED'}</span>
               </div>
             </div>
             <p className="mt-5 text-sm text-cyan-100/70">Select an active investigation. Your best score for each completed case is stored on this device.</p>
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Object.entries(CASES).map(([caseKey, caseFile]) => {
                 const result = detectiveRecord.cases?.[caseKey];
                 return (
@@ -512,7 +625,7 @@ export default function Home() {
                     <div className="p-4">
                       <p className="text-xs text-cyan-200/60">{caseFile.location}</p>
                       <h2 className="mt-1 text-xl font-bold text-cyan-300">{caseFile.title}</h2>
-                      <p className="mt-3 text-xs text-green-200/70">{caseKey === 'metro' ? 'Recover a falsified timestamp.' : 'Expose an impossible reflection.'}</p>
+                      <p className="mt-3 text-xs text-green-200/70">{CASE_SUMMARIES[caseKey]}</p>
                       <span className="mt-4 inline-block text-xs text-pink-400 group-hover:text-white">[ OPEN CASE FILE ]</span>
                     </div>
                   </button>
@@ -610,11 +723,11 @@ export default function Home() {
               <span>RECOVERY ATTEMPTS: <strong className="text-cyan-300">{analysisAttempts}</strong></span>
             </div>
             <form onSubmit={submitAnalysis} className="mt-6">
-              <label htmlFor="recovered-time" className="block text-xs text-cyan-200/70 mb-2">RECOVERED TIME (24-HOUR FORMAT)</label>
+              <label htmlFor="recovered-time" className="block text-xs text-cyan-200/70 mb-2">RECOVERED EVIDENCE DETAIL</label>
               <input
                 id="recovered-time"
                 type="text"
-                inputMode="numeric"
+                inputMode={selectedCaseKey === 'metro' ? 'numeric' : 'text'}
                 autoComplete="off"
                 value={analysisAnswer}
                 onChange={(event) => setAnalysisAnswer(event.target.value)}
@@ -749,7 +862,7 @@ export default function Home() {
               options={{
                 projectId: 289525, // <--- PROJECT ID ADDED HERE
                 theme: 'dark',
-                defaultPrompt: "You are a VCPD Forensic AI Assistant. Help the detective enhance, inspect, and find the altered timestamp in this evidence photo.",
+                defaultPrompt: `You are a VCPD Forensic AI Assistant. Help the detective enhance, inspect, and identify the anomaly in Case ${currentCase.id}: ${currentCase.objective}`,
                 features: {
                   imageEditor: {
                     dock: 'left', 

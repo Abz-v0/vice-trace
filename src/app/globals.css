@@ -29,6 +29,24 @@ input {
   grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr);
 }
 
+.case-card {
+  position: relative;
+  min-height: 100%;
+}
+
+.case-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  pointer-events: none;
+  transition: border-color 180ms ease;
+}
+
+.case-card:hover::after {
+  border-color: rgba(244, 114, 182, 0.7);
+}
+
 .evidence-workspace {
   height: 70vh;
   min-height: 400px;

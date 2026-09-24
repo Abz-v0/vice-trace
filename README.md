@@ -49,6 +49,9 @@ Ranks range from **S-RANK DETECTIVE** to **STREET ROOKIE**, so a clean, fast sol
 | --- | --- | --- |
 | #001 | *The Vice City Metro Incident* | Recover the true time beneath a falsified surveillance timestamp. |
 | #002 | *The Marina Exchange* | Expose an impossible silhouette that exists in the water reflection but not on the dock. |
+| #003 | *The Courier’s Double* | Prove that a delivery scooter was cloned to fabricate an impossible route. |
+| #004 | *The Penthouse Alibi* | Find the palm shadow that contradicts the position of the sunrise. |
+| #005 | *The Missing Manifest* | Enhance a folded shipping document to recover a concealed container route. |
 
 ## Unlayer Image Editor integration
 
@@ -130,13 +133,16 @@ src/app/
 public/
   evidence1.jpg # Case #001 evidence
   evidence2.jpg # Case #002 marina evidence
+  evidence3.jpg # Case #003 courier evidence
+  evidence4.jpg # Case #004 penthouse evidence
+  evidence5.jpg # Case #005 manifest evidence
   bg.jpg        # Terminal background texture
   music.mp3     # Optional ambient soundtrack
 ```
 
 ## Roadmap
 
-The next natural expansion is Case #003: another original evidence image and a distinct forensic puzzle. Cases are data-driven, so each new investigation can bring its own image, clue, recovery answer, hints, accusations, and final report without rebuilding the game flow.
+The next natural expansion is an optional Case #006 finale or a server-backed global leaderboard. Cases are data-driven, so each investigation can bring its own image, clue, recovery answer, hints, accusations, and final report without rebuilding the game flow.
 
 ## Note on inspiration
 
