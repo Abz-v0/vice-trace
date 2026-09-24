@@ -19,6 +19,21 @@ body {
   overflow-x: hidden;
 }
 
+button,
+input {
+  font: inherit;
+}
+
+.case-briefing-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr);
+}
+
+.evidence-workspace {
+  height: 70vh;
+  min-height: 400px;
+}
+
 /* Optimized CRT Scanline Effect (Fixed z-index so it doesn't block Unlayer) */
 .crt-effect {
   position: relative;
@@ -108,6 +123,12 @@ body {
   cursor: pointer;
 }
 
+.btn-press:focus-visible,
+input:focus-visible {
+  outline: 2px solid #67e8f9;
+  outline-offset: 3px;
+}
+
 /* Cinematic Fade In */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -129,5 +150,41 @@ body {
 
   .crt-effect::after {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .case-briefing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .case-briefing-grid > div:last-child {
+    min-height: 180px;
+  }
+
+  .evidence-workspace {
+    height: 65dvh;
+    min-height: 410px;
+  }
+
+  .spy-cursor {
+    cursor: default;
+  }
+
+  .crt-effect::before {
+    background-size: 100% 4px;
+  }
+}
+
+@media (max-height: 700px) and (max-width: 640px) {
+  .evidence-workspace {
+    height: 58dvh;
+    min-height: 340px;
+  }
+}
+
+@media (hover: none) {
+  .btn-press {
+    min-height: 2.5rem;
   }
 }
