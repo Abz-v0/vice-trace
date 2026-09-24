@@ -147,6 +147,29 @@ const CASE_SUMMARIES = {
   manifest: 'Recover a concealed container route code.',
 };
 
+const ANALYST_TRANSMISSIONS = {
+  metro: {
+    briefing: 'The camera overlay is loud, but the pixels around it are louder. Do not trust the first time you see.',
+    debrief: 'Clean recovery. The suspect spent more effort changing the clock than hiding the damage around it.',
+  },
+  marina: {
+    briefing: 'Water does not invent witnesses. If a person appears in a reflection, find the person casting it.',
+    debrief: 'Good. A reflection needs a source. This one had none.',
+  },
+  courier: {
+    briefing: 'A courier can be late. They cannot be in two loading bays at once. Compare what should be unique.',
+    debrief: 'Two scooters, one set of scars. The route was manufactured.',
+  },
+  penthouse: {
+    briefing: 'Light is a witness that cannot be bribed. Start with the sun, then interrogate every shadow.',
+    debrief: 'The sunrise testified against the alibi. Shadows keep better time than suspects.',
+  },
+  manifest: {
+    briefing: 'Paper lies quietly. Raise the detail slowly—too much enhancement can bury the ink you need.',
+    debrief: 'LT-47 is enough to pull the container history. Nice restraint on the enhancement.',
+  },
+};
+
 const loadDetectiveRecord = () => {
   if (typeof window === 'undefined') return { cases: {}, totalScore: 0 };
   try {
@@ -612,6 +635,10 @@ export default function Home() {
               </div>
             </div>
             <p className="mt-5 text-sm text-cyan-100/70">Select an active investigation. Your best score for each completed case is stored on this device.</p>
+            <div className="analyst-signal mt-4 flex items-center gap-3 border border-pink-500/30 bg-pink-950/20 px-3 py-2 text-xs text-pink-100">
+              <span className="animate-pulse text-pink-400">●</span>
+              <span><strong>ANALYST M. VOSS // ONLINE</strong> — Five evidence packets await review.</span>
+            </div>
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Object.entries(CASES).map(([caseKey, caseFile]) => {
                 const result = detectiveRecord.cases?.[caseKey];
@@ -656,6 +683,10 @@ export default function Home() {
                 <hr className="border-cyan-500/30 my-4" />
                 <p className="leading-relaxed">Detective, we have a problem. Internal Affairs believes this image was altered to protect someone involved in the incident.</p>
                 <p className="leading-relaxed">Your job is to open the evidence file. Use the tools to enhance, zoom, and inspect the image. Find what was changed. Find the lie.</p>
+                <div className="analyst-transmission border-l-2 border-pink-500 bg-pink-950/20 px-3 py-3 text-sm text-pink-100">
+                  <p className="mb-1 text-[10px] tracking-widest text-pink-400">SECURE MESSAGE // ANALYST M. VOSS</p>
+                  <p>“{ANALYST_TRANSMISSIONS[selectedCaseKey].briefing}”</p>
+                </div>
               </div>
               <div className="relative min-h-48 overflow-hidden border border-pink-500/40 bg-zinc-950">
                 <Image src={currentCase.image} alt={`Case ${currentCase.id} evidence preview`} fill sizes="(max-width: 640px) 100vw, 360px" className="object-cover opacity-75" priority />
@@ -809,6 +840,10 @@ export default function Home() {
             <p><span className="font-bold text-green-400">FINDINGS:</span> {currentCase.findings}</p>
             <p className="leading-relaxed">By using the Enhance tool and ZOOM view, you isolated the visual inconsistency in the evidence.</p>
             <p className="leading-relaxed">{currentCase.solution}</p>
+            <div className="analyst-transmission border-l-2 border-cyan-400 bg-cyan-950/30 px-3 py-3 text-sm text-cyan-100">
+              <p className="mb-1 text-[10px] tracking-widest text-cyan-300">DEBRIEF // ANALYST M. VOSS</p>
+              <p>“{ANALYST_TRANSMISSIONS[selectedCaseKey].debrief}”</p>
+            </div>
           </div>
           <button onClick={handleShareReport} className="btn-press mt-8 w-full border border-cyan-400 bg-cyan-950/40 text-cyan-300 font-bold py-3 hover:bg-cyan-400 hover:text-black transition-colors">[ SHARE CASE REPORT ]</button>
           {shareStatus && <p role="status" className="mt-3 text-xs text-cyan-200">{shareStatus}</p>}

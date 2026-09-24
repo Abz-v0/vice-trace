@@ -78,6 +78,7 @@ The editor uses a dark, left-docked interface and removes unrelated tools such a
 - Downloadable, annotated evidence exhibits
 - Native sharing or clipboard fallback for final case reports
 - Configured Open Graph and Twitter metadata for polished social previews
+- A recurring Internal Affairs contact, Analyst M. Voss, who sends case-specific briefings and debriefs
 
 ## Technology
 
@@ -143,6 +144,10 @@ public/
 ## Roadmap
 
 The next natural expansion is an optional Case #006 finale or a server-backed global leaderboard. Cases are data-driven, so each investigation can bring its own image, clue, recovery answer, hints, accusations, and final report without rebuilding the game flow.
+
+## Internal Affairs channel
+
+Analyst **M. Voss** is the player’s recurring contact in the VCPD Internal Affairs channel. Voss appears in the Case Files terminal, sends a short encrypted thought-starter before every investigation, and provides a tailored debrief after each correct solve. These messages reinforce the forensic reasoning behind each case without revealing its answer.
 
 ## Note on inspiration
 
