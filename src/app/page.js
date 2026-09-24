@@ -15,6 +15,64 @@ const HINTS = [
   'The displayed stamp says 04:15, but the recovered sequence begins with 02 and ends with 13.',
 ];
 
+const CASES = {
+  metro: {
+    id: '001',
+    title: 'The Vice City Metro Incident',
+    location: 'DOWNTOWN // CAM_04',
+    image: '/evidence1.jpg',
+    objective: 'Inspect the bottom-right camera timestamp. Enhance or zoom the artifact, annotate it, then export your exhibit.',
+    recoveryPrompt: 'Confirm the original time hidden by the altered camera stamp.',
+    recoveryAnswer: '0213',
+    recoveryPlaceholder: 'e.g. 02:13',
+    evidenceHint: 'The visual artifact is in the bottom-right timestamp.',
+    hints: HINTS,
+    accusationPrompt: 'Recovered timestamp confirmed. Identify exactly what the suspect altered in this photograph.',
+    choices: [
+      'The victim\'s face was blurred to hide their identity.',
+      'A murder weapon was photoshopped out of the frame.',
+      'The timestamp on the security camera was altered.',
+    ],
+    correctChoice: 2,
+    findings: 'Correct. The timestamp on the security camera was altered.',
+    solution: 'The murder happened at 02:13 AM, not 04:15 AM. The suspect used the altered time to establish a fake alibi.',
+  },
+  marina: {
+    id: '002',
+    title: 'The Marina Exchange',
+    location: 'MIRAGE MARINA // CAM_11',
+    image: '/evidence2.jpg',
+    objective: 'Inspect the waterline beneath the speedboat. Enhance the dark reflection and mark the inconsistent silhouette before exporting your exhibit.',
+    recoveryPrompt: 'Confirm where the impossible silhouette appears in the evidence.',
+    recoveryAnswer: 'reflection',
+    recoveryPlaceholder: 'e.g. reflection',
+    evidenceHint: 'The dock is empty. Compare it with the reflection directly beneath the moored speedboat.',
+    hints: [
+      'The dock itself is not the altered area. Bring up the dark detail in the water beneath the foreground speedboat.',
+      'Compare the empty stretch of dock with its reflected version—one contains a figure that has no source.',
+      'The clue is a human silhouette that appears only in the water reflection.',
+    ],
+    accusationPrompt: 'The reflection anomaly has been verified. Identify the manipulation used to manufacture an alibi.',
+    choices: [
+      'A human silhouette was composited into the water reflection while the physical dock remained empty.',
+      'The sports coupe was recolored to conceal its owner.',
+      'The neon waterfront building was removed from the background.',
+    ],
+    correctChoice: 0,
+    findings: 'Correct. The reflected silhouette was composited into the water to place a witness at the marina.',
+    solution: 'The dock was empty when the camera recorded the scene. The fabricated reflection was used to support a false witness statement and protect the boat owner.',
+  },
+};
+
+const loadDetectiveRecord = () => {
+  if (typeof window === 'undefined') return { cases: {}, totalScore: 0 };
+  try {
+    return JSON.parse(window.localStorage.getItem('vice-trace-detective-record')) || { cases: {}, totalScore: 0 };
+  } catch {
+    return { cases: {}, totalScore: 0 };
+  }
+};
+
 const getRank = (score) => {
   if (score >= 90) return 'S-RANK DETECTIVE';
   if (score >= 70) return 'INTERNAL AFFAIRS HERO';
@@ -29,6 +87,7 @@ export default function Home() {
   const staticHumRef = useRef(null);
   const audioContextRef = useRef(null);
   const [gameState, setGameState] = useState('start');
+  const [selectedCaseKey, setSelectedCaseKey] = useState('metro');
   const [userName, setUserName] = useState('GUEST');
   const [inputName, setInputName] = useState('');
   const [isMuted, setIsMuted] = useState(true);
@@ -43,6 +102,8 @@ export default function Home() {
   const [caseDuration, setCaseDuration] = useState(0);
   const [shareStatus, setShareStatus] = useState('');
   const caseStartedAtRef = useRef(null);
+  const [detectiveRecord, setDetectiveRecord] = useState(loadDetectiveRecord);
+  const currentCase = CASES[selectedCaseKey];
 
   const getAudioContext = () => {
     if (!audioContextRef.current && typeof window !== 'undefined') {
@@ -59,8 +120,10 @@ export default function Home() {
     const bufferSize = 2 * ctx.sampleRate; // 2 seconds of noise
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const output = buffer.getChannelData(0);
+    let noiseSeed = 123456789;
     for (let i = 0; i < bufferSize; i++) {
-      output[i] = Math.random() * 2 - 1;
+      noiseSeed = (noiseSeed * 1664525 + 1013904223) % 4294967296;
+      output[i] = (noiseSeed / 2147483648) - 1;
     }
     const noise = ctx.createBufferSource();
     noise.buffer = buffer;
@@ -161,13 +224,13 @@ export default function Home() {
     }
   };
 
-  const handleSave = ({ dataUrl, blob }) => {
+  const handleSave = ({ dataUrl }) => {
     console.info('Saved', dataUrl.length, 'characters');
     playSound('success');
     
     const link = document.createElement('a');
     link.href = dataUrl;
-    link.download = `VICE_TRACE_Evidence_${userName}.png`;
+    link.download = `VICE_TRACE_Case_${currentCase.id}_${userName}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -186,16 +249,61 @@ export default function Home() {
 
   const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  const handleAccessFile = () => {
+  const handleAccessFile = (event) => {
     playSound('click');
     if (inputName.trim()) setUserName(inputName.trim().toUpperCase().replace(/\s+/g, '_'));
-    caseStartedAtRef.current = Date.now();
+    caseStartedAtRef.current = event?.timeStamp || 0;
     setHintLevel(0);
     setAnalysisAttempts(0);
     setCaseScore(100);
     setCaseDuration(0);
     setShareStatus('');
     setGameState('connecting');
+  };
+
+  const prepareCaseEvidence = (caseKey) => {
+    const caseFile = CASES[caseKey];
+    if (caseKey !== 'marina' || typeof window === 'undefined') {
+      setEvidenceImage(caseFile.image);
+      return;
+    }
+
+    const sourceImage = new window.Image();
+    sourceImage.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = sourceImage.naturalWidth;
+      canvas.height = sourceImage.naturalHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(sourceImage, 0, 0);
+
+      // Deliberate evidence tamper: a faint figure exists only in the water reflection.
+      const reflectionX = canvas.width * 0.56;
+      const reflectionY = canvas.height * 0.74;
+      context.save();
+      context.globalAlpha = 0.32;
+      context.filter = 'blur(2px)';
+      context.fillStyle = '#d8b85b';
+      context.beginPath();
+      context.ellipse(reflectionX, reflectionY, canvas.width * 0.008, canvas.height * 0.015, 0, 0, Math.PI * 2);
+      context.fill();
+      context.fillRect(reflectionX - canvas.width * 0.009, reflectionY + canvas.height * 0.01, canvas.width * 0.018, canvas.height * 0.09);
+      context.globalAlpha = 0.2;
+      context.fillRect(reflectionX - canvas.width * 0.018, reflectionY + canvas.height * 0.11, canvas.width * 0.036, canvas.height * 0.008);
+      context.fillRect(reflectionX - canvas.width * 0.013, reflectionY + canvas.height * 0.14, canvas.width * 0.026, canvas.height * 0.006);
+      context.restore();
+
+      setEvidenceImage(canvas.toDataURL('image/jpeg', 0.92));
+    };
+    sourceImage.onerror = () => setEvidenceImage(caseFile.image);
+    sourceImage.src = caseFile.image;
+  };
+
+  const selectCase = (caseKey) => {
+    playSound('click');
+    setSelectedCaseKey(caseKey);
+    prepareCaseEvidence(caseKey);
+    setUploadError('');
+    setGameState('briefing');
   };
 
   const startBootSequence = () => {
@@ -207,8 +315,9 @@ export default function Home() {
 
   const submitAnalysis = (event) => {
     event.preventDefault();
-    const normalizedAnswer = analysisAnswer.replace(/[^0-9]/g, '');
-    if (normalizedAnswer === '0213') {
+    const normalizedAnswer = analysisAnswer.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const expectedAnswer = currentCase.recoveryAnswer.replace(/[^a-z0-9]/g, '');
+    if (normalizedAnswer === expectedAnswer) {
       playSound('success');
       setAnalysisError('');
       setGameState('accusing');
@@ -217,11 +326,11 @@ export default function Home() {
     playSound('error');
     setAnalysisAttempts((attempts) => attempts + 1);
     setCaseScore((score) => Math.max(0, score - 10));
-    setAnalysisError('The recovered time does not match the artifact pattern. Re-open the evidence and inspect the bottom-right timestamp.');
+    setAnalysisError(`The recovered detail does not match the evidence. Re-open the exhibit and ${currentCase.evidenceHint.toLowerCase()}`);
   };
 
   const revealHint = () => {
-    if (hintLevel >= HINTS.length) return;
+    if (hintLevel >= currentCase.hints.length) return;
     playSound('click');
     setHintLevel((level) => level + 1);
     setCaseScore((score) => Math.max(0, score - 15));
@@ -233,12 +342,27 @@ export default function Home() {
     }
   };
 
-  const makeAccusation = (isCorrect) => {
+  const saveCaseResult = (finalScore) => {
+    const previous = detectiveRecord.cases?.[selectedCaseKey];
+    const caseResult = {
+      bestScore: Math.max(previous?.bestScore || 0, finalScore),
+      completed: true,
+    };
+    const cases = { ...detectiveRecord.cases, [selectedCaseKey]: caseResult };
+    const totalScore = Object.values(cases).reduce((total, result) => total + result.bestScore, 0);
+    const nextRecord = { cases, totalScore };
+    window.localStorage.setItem('vice-trace-detective-record', JSON.stringify(nextRecord));
+    setDetectiveRecord(nextRecord);
+  };
+
+  const makeAccusation = (isCorrect, event) => {
     playSound(isCorrect ? 'success' : 'error');
     if (isCorrect && caseStartedAtRef.current) {
-      const elapsedSeconds = Math.floor((Date.now() - caseStartedAtRef.current) / 1000);
+      const elapsedSeconds = Math.max(0, Math.floor(((event?.timeStamp || caseStartedAtRef.current) - caseStartedAtRef.current) / 1000));
+      const finalScore = Math.max(0, caseScore - Math.min(20, Math.floor(elapsedSeconds / 30)));
       setCaseDuration(elapsedSeconds);
-      setCaseScore((score) => Math.max(0, score - Math.min(20, Math.floor(elapsedSeconds / 30))));
+      setCaseScore(finalScore);
+      saveCaseResult(finalScore);
     }
     setGameState(isCorrect ? 'solved' : 'failed');
   };
@@ -307,7 +431,7 @@ export default function Home() {
           currentLine++;
         } else {
           clearInterval(interval);
-          setTimeout(() => setGameState('briefing'), 1000);
+          setTimeout(() => setGameState('files'), 1000);
         }
       }, 500);
 
@@ -351,8 +475,51 @@ export default function Home() {
                 {line}
               </p>
             ))}
-            <button onClick={() => setGameState('briefing')} className="btn-press mt-6 text-xs text-cyan-300 underline hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300">[ SKIP BOOT SEQUENCE ]</button>
+            <button onClick={() => setGameState('files')} className="btn-press mt-6 text-xs text-cyan-300 underline hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300">[ SKIP BOOT SEQUENCE ]</button>
           </div>
+        </main>
+      );
+    }
+
+    if (gameState === 'files') {
+      const completedCases = Object.values(detectiveRecord.cases).filter((caseResult) => caseResult.completed).length;
+      const averageScore = completedCases ? Math.round(detectiveRecord.totalScore / completedCases) : 0;
+      return (
+        <main className="crt-effect glitch-in min-h-screen bg-black bg-cover bg-center text-green-400 flex flex-col items-center justify-center p-5 sm:p-8" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.95)), url('/bg.jpg')" }}>
+          <section className="w-full max-w-5xl border-2 border-cyan-500 bg-black/85 p-5 sm:p-8 shadow-[0_0_30px_rgba(34,211,238,0.3)]">
+            <div className="flex flex-col gap-4 border-b border-cyan-500/50 pb-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs text-pink-500">VCPD INTERNAL DATABASE // CASE FILES</p>
+                <h1 className="mt-1 text-3xl font-bold tracking-widest text-cyan-400 sm:text-4xl">VICE//TRACE</h1>
+              </div>
+              <div className="grid grid-cols-3 border border-cyan-500/30 text-center text-[10px] sm:text-xs">
+                <span className="border-r border-cyan-500/30 px-3 py-2"><strong className="block text-cyan-300">CLOSED</strong>{completedCases}/2</span>
+                <span className="border-r border-cyan-500/30 px-3 py-2"><strong className="block text-cyan-300">AVG SCORE</strong>{averageScore || '--'}</span>
+                <span className="px-3 py-2"><strong className="block text-pink-400">RANK</strong>{completedCases ? getRank(averageScore) : 'UNRANKED'}</span>
+              </div>
+            </div>
+            <p className="mt-5 text-sm text-cyan-100/70">Select an active investigation. Your best score for each completed case is stored on this device.</p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {Object.entries(CASES).map(([caseKey, caseFile]) => {
+                const result = detectiveRecord.cases?.[caseKey];
+                return (
+                  <button key={caseKey} onClick={() => selectCase(caseKey)} className="case-card group overflow-hidden border border-cyan-500/40 bg-zinc-950 text-left transition hover:border-pink-500 hover:bg-cyan-950/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300">
+                    <div className="relative h-44 overflow-hidden">
+                      <Image src={caseFile.image} alt={`Case ${caseFile.id} evidence preview`} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover opacity-70 transition duration-500 group-hover:scale-105 group-hover:opacity-90" />
+                      <span className="absolute left-3 top-3 border border-pink-500/50 bg-black/80 px-2 py-1 text-[10px] text-pink-300">CASE {caseFile.id}</span>
+                      {result?.completed && <span className="absolute right-3 top-3 border border-green-500/50 bg-black/80 px-2 py-1 text-[10px] text-green-300">CLOSED // {result.bestScore}</span>}
+                    </div>
+                    <div className="p-4">
+                      <p className="text-xs text-cyan-200/60">{caseFile.location}</p>
+                      <h2 className="mt-1 text-xl font-bold text-cyan-300">{caseFile.title}</h2>
+                      <p className="mt-3 text-xs text-green-200/70">{caseKey === 'metro' ? 'Recover a falsified timestamp.' : 'Expose an impossible reflection.'}</p>
+                      <span className="mt-4 inline-block text-xs text-pink-400 group-hover:text-white">[ OPEN CASE FILE ]</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         </main>
       );
     }
@@ -369,16 +536,17 @@ export default function Home() {
             
             <div className="case-briefing-grid gap-6 text-md text-green-300">
               <div className="space-y-4">
-                <p><span className="font-bold text-white">CASE:</span> #001 - The Vice City Metro Incident</p>
+                <p><span className="font-bold text-white">CASE:</span> #{currentCase.id} - {currentCase.title}</p>
+                <p><span className="font-bold text-white">LOCATION:</span> {currentCase.location}</p>
                 <p><span className="font-bold text-white">DATE:</span> {currentDate}</p>
                 <p><span className="font-bold text-pink-500">STATUS:</span> EVIDENCE TAMPERED</p>
                 <hr className="border-cyan-500/30 my-4" />
-                <p className="leading-relaxed">Detective, we have a problem. The evidence tech swears the file was clean when he uploaded it, but Internal Affairs thinks the photo has been altered to protect a suspect.</p>
+                <p className="leading-relaxed">Detective, we have a problem. Internal Affairs believes this image was altered to protect someone involved in the incident.</p>
                 <p className="leading-relaxed">Your job is to open the evidence file. Use the tools to enhance, zoom, and inspect the image. Find what was changed. Find the lie.</p>
               </div>
               <div className="relative min-h-48 overflow-hidden border border-pink-500/40 bg-zinc-950">
-                <Image src="/evidence1.jpg" alt="Case 001 night-scene evidence with camera timestamp in the corner" fill sizes="(max-width: 640px) 100vw, 360px" className="object-cover opacity-75" priority />
-                <span className="absolute bottom-2 left-2 border border-pink-500/50 bg-black/80 px-2 py-1 text-[10px] text-pink-300">EXHIBIT 001-A // TAMPER SUSPECTED</span>
+                <Image src={currentCase.image} alt={`Case ${currentCase.id} evidence preview`} fill sizes="(max-width: 640px) 100vw, 360px" className="object-cover opacity-75" priority />
+                <span className="absolute bottom-2 left-2 border border-pink-500/50 bg-black/80 px-2 py-1 text-[10px] text-pink-300">EXHIBIT {currentCase.id}-A // TAMPER SUSPECTED</span>
               </div>
             </div>
 
@@ -403,6 +571,7 @@ export default function Home() {
             <button onClick={handleAccessFile} className="btn-press mt-2 w-full bg-cyan-500 text-black font-bold py-3 text-lg tracking-wider hover:bg-pink-500 hover:text-white transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.5)]">
               [ ACCESS EVIDENCE FILE ]
             </button>
+            <button onClick={() => setGameState('files')} className="btn-press mt-3 w-full text-xs text-zinc-400 hover:text-white">[ &lt; BACK TO CASE FILES ]</button>
           </div>
         </main>
       );
@@ -430,11 +599,11 @@ export default function Home() {
       return (
         <main className="crt-effect glitch-in min-h-screen bg-black bg-cover bg-center text-white flex flex-col items-center justify-center p-8" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url('/bg.jpg')" }}>
           <div className="border-2 border-cyan-500 p-8 max-w-2xl shadow-[0_0_30px_rgba(34,211,238,0.3)] bg-black/80">
-            <p className="text-xs text-cyan-200/70 mb-2">CHAIN OF CUSTODY // EXHIBIT EXPORTED</p>
+            <p className="text-xs text-cyan-200/70 mb-2">CASE {currentCase.id} {'//'} EXHIBIT EXPORTED</p>
             <h1 className="text-3xl font-bold mb-5 text-cyan-400 tracking-widest">VERIFY RECOVERED DATA</h1>
             <div className="border border-cyan-500/30 bg-cyan-950/20 p-4 text-sm text-cyan-100 space-y-2">
-              <p><span className="text-pink-500">OBJECTIVE:</span> Confirm the original time hidden by the altered camera stamp.</p>
-              <p>Use your annotated export and the evidence viewer. The visual artifact is in the bottom-right timestamp.</p>
+              <p><span className="text-pink-500">OBJECTIVE:</span> {currentCase.recoveryPrompt}</p>
+              <p>Use your annotated export and the evidence viewer. {currentCase.evidenceHint}</p>
             </div>
             <div className="mt-4 flex items-center justify-between gap-3 border border-cyan-500/20 px-3 py-2 text-xs">
               <span>CASE SCORE: <strong className="text-pink-400">{caseScore}/100</strong></span>
@@ -449,7 +618,7 @@ export default function Home() {
                 autoComplete="off"
                 value={analysisAnswer}
                 onChange={(event) => setAnalysisAnswer(event.target.value)}
-                placeholder="e.g. 02:13"
+                placeholder={currentCase.recoveryPlaceholder}
                 className="w-full bg-zinc-900 border border-cyan-500/50 text-white px-3 py-3 text-lg focus:outline-none focus:border-pink-500"
                 aria-describedby={analysisError ? 'analysis-error' : undefined}
               />
@@ -457,9 +626,9 @@ export default function Home() {
               <button type="submit" className="btn-press mt-5 w-full bg-cyan-500 text-black font-bold py-3 hover:bg-pink-500 hover:text-white transition-colors">[ VERIFY FINDING ]</button>
             </form>
             <div className="mt-5 border-t border-cyan-500/20 pt-4">
-              {hintLevel > 0 && <p className="mb-3 text-sm text-yellow-200">ANALYST NOTE: {HINTS[hintLevel - 1]}</p>}
-              <button onClick={revealHint} disabled={hintLevel >= HINTS.length} className="btn-press w-full border border-yellow-500/60 px-3 py-2 text-xs text-yellow-300 hover:bg-yellow-500 hover:text-black disabled:cursor-not-allowed disabled:opacity-40">
-                {hintLevel >= HINTS.length ? '[ ALL ANALYST NOTES DECRYPTED ]' : `[ REQUEST ANALYST NOTE — -15 SCORE ]`}
+              {hintLevel > 0 && <p className="mb-3 text-sm text-yellow-200">ANALYST NOTE: {currentCase.hints[hintLevel - 1]}</p>}
+              <button onClick={revealHint} disabled={hintLevel >= currentCase.hints.length} className="btn-press w-full border border-yellow-500/60 px-3 py-2 text-xs text-yellow-300 hover:bg-yellow-500 hover:text-black disabled:cursor-not-allowed disabled:opacity-40">
+                {hintLevel >= currentCase.hints.length ? '[ ALL ANALYST NOTES DECRYPTED ]' : `[ REQUEST ANALYST NOTE — -15 SCORE ]`}
               </button>
             </div>
             <button onClick={() => { playSound('click'); setGameState('editor'); }} className="mt-5 w-full text-xs text-zinc-400 hover:text-white transition-colors">[ &lt; RETURN TO EVIDENCE ]</button>
@@ -476,14 +645,16 @@ export default function Home() {
             <p className="text-sm mb-6 text-yellow-200/70">INTERNAL AFFAIRS REVIEW</p>
             
             <div className="space-y-4 text-md text-white">
-              <p className="leading-relaxed text-lg">Recovered timestamp confirmed. Before Internal Affairs throws this out, identify exactly what the suspect altered in this photograph.</p>
+              <p className="leading-relaxed text-lg">{currentCase.accusationPrompt}</p>
               <p className="text-pink-500 font-bold">Choose carefully. Accusing the wrong person ends your career.</p>
             </div>
 
             <div className="mt-8 flex flex-col gap-4">
-              <button onClick={() => makeAccusation(false)} className="btn-press w-full bg-zinc-800 text-white font-bold py-4 text-lg tracking-wide border border-zinc-600 hover:bg-zinc-700 hover:border-red-500 transition-all">A) The victim&apos;s face was blurred to hide their identity.</button>
-              <button onClick={() => makeAccusation(false)} className="btn-press w-full bg-zinc-800 text-white font-bold py-4 text-lg tracking-wide border border-zinc-600 hover:bg-zinc-700 hover:border-red-500 transition-all">B) A murder weapon was photoshopped out of the frame.</button>
-              <button onClick={() => makeAccusation(true)} className="btn-press w-full bg-zinc-800 text-white font-bold py-4 text-lg tracking-wide border border-zinc-600 hover:bg-zinc-700 hover:border-green-500 transition-all">C) The timestamp on the security camera was altered.</button>
+              {currentCase.choices.map((choice, index) => (
+                <button key={choice} onClick={(event) => makeAccusation(index === currentCase.correctChoice, event)} className="btn-press w-full bg-zinc-800 text-white font-bold py-4 text-left text-base sm:text-lg tracking-wide border border-zinc-600 hover:bg-zinc-700 hover:border-green-500 transition-all">
+                  {String.fromCharCode(65 + index)}) {choice}
+                </button>
+              ))}
             </div>
             
             <button onClick={() => { playSound('click'); setGameState('editor'); }} className="mt-6 w-full text-xs text-zinc-400 hover:text-white transition-colors">[ &lt; BACK TO EVIDENCE ]</button>
@@ -497,7 +668,7 @@ export default function Home() {
         <main className="crt-effect glitch-in min-h-screen bg-black text-red-500 flex flex-col items-center justify-center p-8">
           <div className="border-2 border-red-500 p-8 max-w-2xl shadow-[0_0_30px_rgba(239,68,68,0.5)] bg-black/80 text-center">
             <h1 className="text-4xl font-bold mb-4 tracking-widest glitch-text">CASE DISMISSED</h1>
-            <p className="text-md text-white mb-6">You accused the wrong person. The suspect walked free, and Internal Affairs has suspended you.</p>
+            <p className="text-md text-white mb-6">You accused the wrong person. The evidence is still available—return to Case #{currentCase.id} and inspect it again.</p>
             <button onClick={() => { playSound('click'); setGameState('editor'); }} className="btn-press mt-4 w-full bg-red-500 text-black font-bold py-3 hover:bg-red-400 transition-colors">[ TRY AGAIN ]</button>
           </div>
         </main>
@@ -508,7 +679,7 @@ export default function Home() {
     return (
       <main className="crt-effect glitch-in min-h-screen bg-black bg-cover bg-center text-red-400 flex flex-col items-center justify-center p-8" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url('/bg.jpg')" }}>
         <div className="border-2 border-green-500 p-8 max-w-2xl shadow-[0_0_30px_rgba(34,197,94,0.4)] bg-black/80 text-center">
-          <h1 className="text-4xl font-bold mb-2 text-green-500 tracking-widest glitch-text">CASE CLOSED: #001</h1>
+          <h1 className="text-4xl font-bold mb-2 text-green-500 tracking-widest glitch-text">CASE CLOSED: #{currentCase.id}</h1>
           
           <p className="text-xl text-pink-500 font-bold tracking-widest mb-6 animate-pulse">
             RANK: {getRank(caseScore)}
@@ -522,13 +693,13 @@ export default function Home() {
 
           <p className="text-sm mb-6 text-green-200/70">INTERNAL AFFAIRS REPORT</p>
           <div className="space-y-4 text-md text-white text-left">
-            <p><span className="font-bold text-green-400">FINDINGS:</span> Correct. The timestamp on the security camera was altered.</p>
-            <p className="leading-relaxed">By using the Enhance tool to increase the exposure, or the Zoom tool to inspect the bottom-right corner, you noticed the digital artifacts around the date stamp.</p>
-            <p className="leading-relaxed">The murder actually happened at <span className="font-bold text-pink-500">02:13 AM</span>, not 04:15 AM. The suspect used the altered time to establish a fake alibi.</p>
+            <p><span className="font-bold text-green-400">FINDINGS:</span> {currentCase.findings}</p>
+            <p className="leading-relaxed">By using the Enhance tool and ZOOM view, you isolated the visual inconsistency in the evidence.</p>
+            <p className="leading-relaxed">{currentCase.solution}</p>
           </div>
           <button onClick={handleShareReport} className="btn-press mt-8 w-full border border-cyan-400 bg-cyan-950/40 text-cyan-300 font-bold py-3 hover:bg-cyan-400 hover:text-black transition-colors">[ SHARE CASE REPORT ]</button>
           {shareStatus && <p role="status" className="mt-3 text-xs text-cyan-200">{shareStatus}</p>}
-          <button onClick={() => { playSound('click'); setGameState('briefing'); }} className="btn-press mt-3 w-full bg-green-500 text-black font-bold py-3 hover:bg-pink-500 transition-colors">[ RETURN TO CASE FILES ]</button>
+          <button onClick={() => { playSound('click'); setGameState('files'); }} className="btn-press mt-3 w-full bg-green-500 text-black font-bold py-3 hover:bg-pink-500 transition-colors">[ RETURN TO CASE FILES ]</button>
         </div>
       </main>
     );
@@ -552,13 +723,13 @@ export default function Home() {
             <button onClick={() => { playSound('click'); fileInputRef.current?.click(); }} className="btn-press text-[10px] sm:text-xs text-green-400 hover:text-white border border-green-500/50 hover:border-green-500 px-2 py-1 transition-colors" aria-label="Upload New Evidence">[ UPLOAD ]</button>
 
             <button onClick={handleResetEvidence} className="btn-press text-[10px] sm:text-xs text-yellow-500 hover:text-white border border-yellow-500/50 hover:border-yellow-500 px-2 py-1 transition-colors" aria-label="Reset Evidence">[ RESET ]</button>
-            <button onClick={() => { playSound('click'); setGameState('briefing'); }} className="btn-press text-[10px] sm:text-xs text-red-500 hover:text-white border border-red-500/50 hover:border-red-500 px-2 py-1 transition-colors" aria-label="Close File">[ CLOSE ]</button>
+            <button onClick={() => { playSound('click'); setGameState('files'); }} className="btn-press text-[10px] sm:text-xs text-red-500 hover:text-white border border-red-500/50 hover:border-red-500 px-2 py-1 transition-colors" aria-label="Close File">[ CLOSE ]</button>
           </div>
         </header>
 
         <section className="mb-2 sm:mb-4 border border-cyan-500/30 bg-black/70 px-3 py-2 text-xs text-cyan-100/80 z-10" aria-label="Case objective">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p><span className="text-pink-500 font-bold">CASE OBJECTIVE:</span> Inspect the bottom-right camera timestamp. Enhance or zoom the artifact, annotate it, then use <span className="text-cyan-300">SUBMIT FINDINGS</span> to export your exhibit and verify the recovered time.</p>
+            <p><span className="text-pink-500 font-bold">CASE {currentCase.id} OBJECTIVE:</span> {currentCase.objective} Then use <span className="text-cyan-300">SUBMIT FINDINGS</span> to verify your recovered detail.</p>
             <span className="shrink-0 text-pink-300">SCORE {caseScore}/100</span>
           </div>
           <div className="mt-2 flex flex-wrap gap-2 text-[10px] sm:hidden">
@@ -612,7 +783,7 @@ export default function Home() {
                 }
               }} 
               onSave={handleSave} 
-              onCancel={() => { playSound('click'); setGameState('briefing'); }} 
+              onCancel={() => { playSound('click'); setGameState('files'); }}
               onLoadError={handleLoadError} 
               onError={handleError}         
             />
@@ -621,7 +792,7 @@ export default function Home() {
         
         {/* Hardware Status Bar Footer */}
         <footer className="mt-4 flex flex-col sm:flex-row justify-center sm:justify-between text-center text-[10px] sm:text-xs text-cyan-200/50 px-2 z-10 gap-1 font-mono">
-          <span>SYS_V1.0.4 // SECURE</span>
+          <span>SYS_V1.0.4 {'//'} SECURE</span>
           <span className="animate-pulse hidden sm:inline">● LOGGING ACTIVITY</span>
           <span>DETECTIVE: {userName}</span>
         </footer>

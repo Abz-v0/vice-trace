@@ -24,7 +24,7 @@ Most editor demos ask players to make something look good. VICE//TRACE gives the
 ## Play flow
 
 1. Initialize the VCPD terminal and enter a detective badge name.
-2. Read Case #001: *The Vice City Metro Incident*.
+2. Choose an active investigation from the Case Files terminal.
 3. Open the evidence and inspect the camera timestamp in the lower-right corner.
 4. Use the editor’s forensic tools to enhance or zoom into the artifact. Marking the clue is encouraged before exporting your exhibit.
 5. Select **SUBMIT FINDINGS** to download the edited exhibit and enter the recovered time.
@@ -41,7 +41,14 @@ Every investigation starts at **100 points**.
 | Incorrect recovered time | −10 points |
 | Longer investigation | Small time deduction, capped at −20 points |
 
-Ranks range from **S-RANK DETECTIVE** to **STREET ROOKIE**, so a clean, fast solve is worth replaying for.
+Ranks range from **S-RANK DETECTIVE** to **STREET ROOKIE**, so a clean, fast solve is worth replaying for. The Case Files terminal stores the best score for each case on the player’s device and calculates a campaign rank from completed investigations.
+
+## Active cases
+
+| Case | Investigation | Forensic challenge |
+| --- | --- | --- |
+| #001 | *The Vice City Metro Incident* | Recover the true time beneath a falsified surveillance timestamp. |
+| #002 | *The Marina Exchange* | Expose an impossible silhouette that exists in the water reflection but not on the dock. |
 
 ## Unlayer Image Editor integration
 
@@ -122,13 +129,14 @@ src/app/
   layout.js     # Font, metadata, and social-preview configuration
 public/
   evidence1.jpg # Case #001 evidence
+  evidence2.jpg # Case #002 marina evidence
   bg.jpg        # Terminal background texture
   music.mp3     # Optional ambient soundtrack
 ```
 
 ## Roadmap
 
-The next natural expansion is a compact case-file campaign: additional original evidence images, distinct forensic puzzles, and a persistent detective record. The current build is deliberately focused on making one case satisfying end-to-end before expanding the content.
+The next natural expansion is Case #003: another original evidence image and a distinct forensic puzzle. Cases are data-driven, so each new investigation can bring its own image, clue, recovery answer, hints, accusations, and final report without rebuilding the game flow.
 
 ## Note on inspiration
 
