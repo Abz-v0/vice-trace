@@ -25,6 +25,9 @@ const CASES = {
     recoveryPrompt: 'Confirm the original time hidden by the altered camera stamp.',
     recoveryAnswer: '0213',
     recoveryPlaceholder: 'e.g. 02:13',
+    boardClues: ['Timestamp pixels show compression seams around the changed digits.', 'The camera lens has a visible crack across the corner.', 'The pavement reflections are brighter on the left.'],
+    boardConclusions: ['The overlay was edited after capture to create a false alibi.', 'The camera clock lost power before the incident.', 'The suspect entered the scene from the west.'],
+    boardPair: [0, 0],
     evidenceHint: 'The visual artifact is in the bottom-right timestamp.',
     hints: HINTS,
     accusationPrompt: 'Recovered timestamp confirmed. Identify exactly what the suspect altered in this photograph.',
@@ -46,6 +49,9 @@ const CASES = {
     recoveryPrompt: 'Confirm where the impossible silhouette appears in the evidence.',
     recoveryAnswer: 'reflection',
     recoveryPlaceholder: 'e.g. reflection',
+    boardClues: ['A human shape appears only in the water beneath the boat.', 'The dock lights cast long pink streaks across the harbor.', 'A dark coupe is parked near the marina entrance.'],
+    boardConclusions: ['A witness was composited into the image to place them at the exchange.', 'The witness boarded the speedboat before the camera arrived.', 'The coupe driver was standing on the dock.'],
+    boardPair: [0, 0],
     evidenceHint: 'The dock is empty. Compare it with the reflection directly beneath the moored speedboat.',
     hints: [
       'The dock itself is not the altered area. Bring up the dark detail in the water beneath the foreground speedboat.',
@@ -71,6 +77,9 @@ const CASES = {
     recoveryPrompt: 'Confirm the item that was duplicated to fabricate the courier’s route.',
     recoveryAnswer: 'scooter',
     recoveryPlaceholder: 'e.g. scooter',
+    boardClues: ['Both red scooters repeat the same torn seat and blue cargo bag.', 'The foreground scooter has a brighter headlight.', 'Rainwater runs toward the harbor drain.'],
+    boardConclusions: ['One scooter was cloned to fabricate a second stop on the route.', 'Two different couriers arrived at the market together.', 'The delivery bag was switched after the drop-off.'],
+    boardPair: [0, 0],
     evidenceHint: 'Compare the foreground red scooter with the red scooter beneath the market awning.',
     hints: [
       'There are two red scooters, but there should only be one courier vehicle in this delivery zone.',
@@ -96,6 +105,9 @@ const CASES = {
     recoveryPrompt: 'Confirm which object casts the impossible shadow.',
     recoveryAnswer: 'palm',
     recoveryPlaceholder: 'e.g. palm',
+    boardClues: ['The palm shadow points toward the visible sunrise.', 'The lounge chair casts a long shadow across the terrace.', 'The pool reflects the bright sky.'],
+    boardConclusions: ['The plant shadow was altered to misrepresent the time of capture.', 'The terrace lights were turned on before dawn.', 'The image was captured after sunset.'],
+    boardPair: [0, 0],
     evidenceHint: 'The sunrise is on the right. Compare the potted palm’s shadow with the chair and table shadows.',
     hints: [
       'Use the sun as a reference point: every genuine shadow should fall away from it.',
@@ -121,6 +133,9 @@ const CASES = {
     recoveryPrompt: 'Enter the recovered container route code.',
     recoveryAnswer: 'LT47',
     recoveryPlaceholder: 'e.g. LT-47',
+    boardClues: ['A faint LT-47 code is written beneath the folded manifest corner.', 'The flashlight is pointed toward the warehouse door.', 'Rain is visible through the loading shutter.'],
+    boardConclusions: ['A container was diverted off the official inspection route.', 'The manifest was printed after the vessel departed.', 'The warehouse was closed when the cargo arrived.'],
+    boardPair: [0, 0],
     evidenceHint: 'The code is written on the manifest beneath the folded corner, beside the flashlight.',
     hints: [
       'The warehouse yard is a distraction. Focus on the paperwork under the desk lamp.',
@@ -204,6 +219,10 @@ export default function Home() {
   const [uploadError, setUploadError] = useState('');
   const [hintLevel, setHintLevel] = useState(0);
   const [analysisAttempts, setAnalysisAttempts] = useState(0);
+  const [boardClueChoice, setBoardClueChoice] = useState(null);
+  const [boardConclusionChoice, setBoardConclusionChoice] = useState(null);
+  const [boardError, setBoardError] = useState('');
+  const [boardSolved, setBoardSolved] = useState(false);
   const [caseScore, setCaseScore] = useState(100);
   const [caseDuration, setCaseDuration] = useState(0);
   const [shareStatus, setShareStatus] = useState('');
@@ -361,6 +380,10 @@ export default function Home() {
     caseStartedAtRef.current = event?.timeStamp || 0;
     setHintLevel(0);
     setAnalysisAttempts(0);
+    setBoardClueChoice(null);
+    setBoardConclusionChoice(null);
+    setBoardError('');
+    setBoardSolved(false);
     setCaseScore(100);
     setCaseDuration(0);
     setShareStatus('');
@@ -456,13 +479,35 @@ export default function Home() {
     if (normalizedAnswer === expectedAnswer) {
       playSound('success');
       setAnalysisError('');
-      setGameState('accusing');
+      setBoardClueChoice(null);
+      setBoardConclusionChoice(null);
+      setBoardError('');
+      setGameState('board');
       return;
     }
     playSound('error');
     setAnalysisAttempts((attempts) => attempts + 1);
     setCaseScore((score) => Math.max(0, score - 10));
     setAnalysisError(`The recovered detail does not match the evidence. Re-open the exhibit and ${currentCase.evidenceHint.toLowerCase()}`);
+  };
+
+  const submitEvidenceBoard = (event) => {
+    event.preventDefault();
+    if (boardSolved) return;
+    if (boardClueChoice === null || boardConclusionChoice === null) {
+      setBoardError('Select one observed detail and one conclusion to connect the evidence.');
+      return;
+    }
+    if (boardClueChoice !== currentCase.boardPair[0] || boardConclusionChoice !== currentCase.boardPair[1]) {
+      playSound('error');
+      setBoardError('That link does not hold up under review. Recheck the exhibit or request an analyst note.');
+      setCaseScore((score) => Math.max(0, score - 5));
+      return;
+    }
+    playSound('success');
+    setBoardError('');
+    setBoardSolved(true);
+    setCaseScore((score) => Math.min(100, score + 5));
   };
 
   const revealHint = () => {
@@ -639,6 +684,10 @@ export default function Home() {
               <span className="animate-pulse text-pink-400">●</span>
               <span><strong>ANALYST M. VOSS // ONLINE</strong> — Five evidence packets await review.</span>
             </div>
+            <div className="mt-5" aria-label={`${completedCases} of ${Object.keys(CASES).length} cases closed`}>
+              <div className="mb-2 flex justify-between text-[10px] tracking-widest text-cyan-200/70"><span>INVESTIGATION PROGRESS</span><span>{completedCases} / {Object.keys(CASES).length}</span></div>
+              <div className="h-1.5 overflow-hidden bg-zinc-800"><div className="h-full bg-gradient-to-r from-cyan-400 to-pink-500 transition-[width] duration-700" style={{ width: `${(completedCases / Object.keys(CASES).length) * 100}%` }} /></div>
+            </div>
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Object.entries(CASES).map(([caseKey, caseFile]) => {
                 const result = detectiveRecord.cases?.[caseKey];
@@ -777,6 +826,63 @@ export default function Home() {
             </div>
             <button onClick={() => { playSound('click'); setGameState('editor'); }} className="mt-5 w-full text-xs text-zinc-400 hover:text-white transition-colors">[ &lt; RETURN TO EVIDENCE ]</button>
           </div>
+        </main>
+      );
+    }
+
+    if (gameState === 'board') {
+      return (
+        <main className="crt-effect glitch-in min-h-[100dvh] bg-black bg-cover bg-center text-white flex flex-col items-center justify-center p-5 sm:p-8" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.86), rgba(0,0,0,0.96)), url('/bg.jpg')" }}>
+          <section className="w-full max-w-5xl border border-cyan-500/60 bg-black/90 p-5 sm:p-8 shadow-[0_0_35px_rgba(34,211,238,0.18)]">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-cyan-500/30 pb-4">
+              <div>
+                <p className="text-[10px] tracking-[0.25em] text-pink-400">VCPD FORENSICS // DEDUCTION BOARD</p>
+                <h1 className="mt-2 text-2xl font-bold tracking-wider text-cyan-300 sm:text-3xl">CONNECT THE EVIDENCE</h1>
+              </div>
+              <span className="border border-cyan-500/30 px-3 py-2 text-xs text-cyan-100">CASE {currentCase.id} · SCORE {caseScore}</span>
+            </div>
+            <p className="mt-4 max-w-3xl text-sm text-zinc-300">Before you accuse anyone, connect the observed detail to the conclusion it supports. Select one card in each column.</p>
+
+            <form onSubmit={submitEvidenceBoard} className="mt-6">
+              <div className="evidence-board-grid relative grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
+                <fieldset className="space-y-3">
+                  <legend className="mb-3 text-xs font-bold tracking-widest text-pink-300">OBSERVED IN THE EXHIBIT</legend>
+                  {currentCase.boardClues.map((clue, index) => (
+                    <button type="button" key={clue} aria-pressed={boardClueChoice === index} onClick={() => { setBoardClueChoice(index); setBoardError(''); }} className={`evidence-card w-full border p-4 text-left text-sm transition-all ${boardClueChoice === index ? 'border-pink-400 bg-pink-950/50 text-white shadow-[0_0_18px_rgba(244,114,182,0.2)]' : 'border-zinc-700 bg-zinc-950/80 text-zinc-300 hover:border-cyan-500/60'}`}>
+                      <span className="mb-2 block text-[10px] text-cyan-400">FRAGMENT 0{index + 1}</span>{clue}
+                    </button>
+                  ))}
+                </fieldset>
+
+                <div className="evidence-link-visual hidden items-center justify-center px-2 md:flex" aria-hidden="true">
+                  <span className={`link-node ${boardClueChoice !== null && boardConclusionChoice !== null ? 'link-node-active' : ''}`}>↔</span>
+                </div>
+
+                <fieldset className="space-y-3">
+                  <legend className="mb-3 text-xs font-bold tracking-widest text-cyan-300">WHAT IT PROVES</legend>
+                  {currentCase.boardConclusions.map((conclusion, index) => (
+                    <button type="button" key={conclusion} aria-pressed={boardConclusionChoice === index} onClick={() => { setBoardConclusionChoice(index); setBoardError(''); }} className={`evidence-card w-full border p-4 text-left text-sm transition-all ${boardConclusionChoice === index ? 'border-cyan-300 bg-cyan-950/50 text-white shadow-[0_0_18px_rgba(34,211,238,0.2)]' : 'border-zinc-700 bg-zinc-950/80 text-zinc-300 hover:border-cyan-500/60'}`}>
+                      <span className="mb-2 block text-[10px] text-pink-400">DEDUCTION 0{index + 1}</span>{conclusion}
+                    </button>
+                  ))}
+                </fieldset>
+              </div>
+
+              {boardError && <p role="alert" className="mt-4 border-l-2 border-red-400 bg-red-950/30 px-3 py-2 text-sm text-red-200">{boardError}</p>}
+              {boardSolved && <p role="status" className="mt-4 border-l-2 border-green-400 bg-green-950/30 px-3 py-2 text-sm text-green-200">Evidence chain confirmed. +5 case points awarded.</p>}
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+                <button type="button" onClick={() => setGameState('analysis')} className="btn-press border border-zinc-600 px-4 py-3 text-xs text-zinc-300 hover:border-cyan-400 hover:text-white">[ REVIEW RECOVERED DETAIL ]</button>
+                {boardSolved ? (
+                  <button type="button" onClick={() => { playSound('click'); setGameState('accusing'); }} className="btn-press bg-cyan-400 px-5 py-3 text-sm font-bold text-black hover:bg-pink-400">[ CONTINUE TO INTERNAL AFFAIRS ]</button>
+                ) : (
+                  <button type="submit" className="btn-press bg-cyan-500 px-5 py-3 text-sm font-bold text-black hover:bg-pink-400">[ VERIFY EVIDENCE LINK ]</button>
+                )}
+              </div>
+            </form>
+            <div className="mt-6 flex items-center gap-3 border-t border-pink-500/20 pt-4 text-xs text-pink-100/80">
+              <span className="text-pink-400">● ANALYST M. VOSS</span><span>“A theory is only as strong as the detail that supports it.”</span>
+            </div>
+          </section>
         </main>
       );
     }

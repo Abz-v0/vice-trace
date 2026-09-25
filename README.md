@@ -18,6 +18,7 @@ Most editor demos ask players to make something look good. VICE//TRACE gives the
 
 - **The editor is the investigation.** Players enhance, zoom, mark, annotate, and redact a crime-scene image to find the manipulation.
 - **Evidence must be verified.** Exporting an edited exhibit unlocks a forensic recovery step; it does not automatically solve the case.
+- **Build the deduction.** A two-column evidence board asks players to connect a visible clue with the conclusion it supports before Internal Affairs accepts an accusation.
 - **Choices have stakes.** Incorrect recovered times lower the case score, analyst notes cost points, and a wrong accusation ends the run.
 - **Results are replayable.** Every completed case produces a score, rank, time, hint count, and a shareable case report.
 
@@ -28,8 +29,9 @@ Most editor demos ask players to make something look good. VICE//TRACE gives the
 3. Open the evidence and inspect the camera timestamp in the lower-right corner.
 4. Use the editor’s forensic tools to enhance or zoom into the artifact. Marking the clue is encouraged before exporting your exhibit.
 5. Select **SUBMIT FINDINGS** to download the edited exhibit and enter the recovered time.
-6. Identify the alteration during the Internal Affairs review.
-7. Receive a rank and share the case report.
+6. Connect the observed detail to its implication on the evidence board.
+7. Identify the alteration during the Internal Affairs review.
+8. Receive a rank and share the case report.
 
 ### Scoring
 
@@ -40,6 +42,8 @@ Every investigation starts at **100 points**.
 | Analyst note requested | −15 points |
 | Incorrect recovered time | −10 points |
 | Longer investigation | Small time deduction, capped at −20 points |
+| Correct evidence-board link | +5 points |
+| Incorrect evidence-board link | −5 points |
 
 Ranks range from **S-RANK DETECTIVE** to **STREET ROOKIE**, so a clean, fast solve is worth replaying for. The Case Files terminal stores the best score for each case on the player’s device and calculates a campaign rank from completed investigations.
 
