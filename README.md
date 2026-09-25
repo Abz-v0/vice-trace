@@ -10,7 +10,7 @@
 
 VICE//TRACE is an interactive browser game in which you play a Vice City police detective investigating a tampered surveillance image. It was built for the **#BuiltWithImageEditor Challenge** to demonstrate that image editing can be a game mechanic—not just a utility.
 
-The goal is simple: inspect the evidence, recover the original timestamp, make the right accusation, and close the case before Internal Affairs closes it for you.
+The goal is to inspect the evidence, recover the hidden detail, make the right accusation, and connect five apparently unrelated cases before Internal Affairs closes the investigation.
 
 ## Why it is different
 
@@ -21,13 +21,14 @@ Most editor demos ask players to make something look good. VICE//TRACE gives the
 - **Build the deduction.** A two-column evidence board asks players to connect a visible clue with the conclusion it supports before Internal Affairs accepts an accusation.
 - **Choices have stakes.** Incorrect recovered times lower the case score, analyst notes cost points, and a wrong accusation ends the run.
 - **Results are replayable.** Every completed case produces a score, rank, time, hint count, and a shareable case report.
+- **A larger story emerges.** Each solved case reveals another link in a freight diversion conspiracy; closing all five unlocks Analyst Voss’s final evidence ledger.
 
 ## Play flow
 
 1. Initialize the VCPD terminal and enter a detective badge name.
 2. Choose an active investigation from the Case Files terminal.
 3. Open the evidence and inspect the camera timestamp in the lower-right corner.
-4. Use the editor’s forensic tools to enhance or zoom into the artifact. Marking the clue is encouraged before exporting your exhibit.
+4. Use the Unlayer editor’s forensic tools to enhance or zoom into the artifact. Marking the clue is encouraged before exporting your exhibit.
 5. Select **SUBMIT FINDINGS** to download the edited exhibit and enter the recovered time.
 6. Connect the observed detail to its implication on the evidence board.
 7. Identify the alteration during the Internal Affairs review.
@@ -83,6 +84,8 @@ The editor uses a dark, left-docked interface and removes unrelated tools such a
 - Native sharing or clipboard fallback for final case reports
 - Configured Open Graph and Twitter metadata for polished social previews
 - A recurring Internal Affairs contact, Analyst M. Voss, who sends case-specific briefings and debriefs
+- A five-case narrative thread with an unlockable campaign finale
+- Animated evidence connections, case-closed stamps, and evolving analyst transmissions, with reduced-motion support
 
 ## Technology
 

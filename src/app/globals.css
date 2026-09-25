@@ -98,11 +98,68 @@ input {
   color: #f9a8d4;
   border-color: #f472b6;
   box-shadow: 0 0 24px rgba(244, 114, 182, 0.35);
+  animation: connection-snap 420ms cubic-bezier(0.2, 1.8, 0.4, 1) both;
+}
+
+.case-report-card {
+  isolation: isolate;
+}
+
+.case-closed-stamp {
+  position: absolute;
+  z-index: -1;
+  top: 1.2rem;
+  right: 1.5rem;
+  transform: rotate(-12deg) scale(1.8);
+  border: 3px solid rgba(74, 222, 128, 0.65);
+  padding: 0.2rem 0.55rem;
+  color: rgba(74, 222, 128, 0.7);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  opacity: 0;
+  animation: evidence-stamp 550ms 350ms cubic-bezier(0.2, 1.6, 0.5, 1) forwards;
+  pointer-events: none;
+}
+
+.campaign-clue,
+.analyst-transmission {
+  animation: transmission-arrive 450ms ease-out both;
+}
+
+.ledger-entry {
+  animation: dossier-arrive 480ms both cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.finale-unlock {
+  animation: finale-signal 2.2s ease-in-out infinite;
 }
 
 @keyframes dossier-arrive {
   from { opacity: 0; transform: translateY(12px) scale(0.985); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes connection-snap {
+  0% { transform: scale(0.72); filter: brightness(1.8); }
+  65% { transform: scale(1.18); }
+  100% { transform: scale(1.08); filter: brightness(1); }
+}
+
+@keyframes evidence-stamp {
+  0% { opacity: 0; transform: rotate(-18deg) scale(2.6); }
+  70% { opacity: 0.92; transform: rotate(-10deg) scale(0.92); }
+  100% { opacity: 0.74; transform: rotate(-12deg) scale(1); }
+}
+
+@keyframes transmission-arrive {
+  from { opacity: 0; transform: translateX(-10px); filter: blur(2px); }
+  to { opacity: 1; transform: translateX(0); filter: blur(0); }
+}
+
+@keyframes finale-signal {
+  0%, 100% { box-shadow: 0 0 0 rgba(251, 191, 36, 0); }
+  50% { box-shadow: 0 0 24px rgba(251, 191, 36, 0.18); }
 }
 
 .evidence-workspace {
@@ -229,9 +286,20 @@ input:focus-visible {
   }
 
   .case-card,
-  .evidence-card::after {
+  .evidence-card::after,
+  .link-node-active,
+  .case-closed-stamp,
+  .campaign-clue,
+  .analyst-transmission,
+  .ledger-entry,
+  .finale-unlock {
     animation: none !important;
     transition: none !important;
+  }
+
+  .case-closed-stamp {
+    transform: rotate(-12deg) scale(1);
+    opacity: 0.74;
   }
 }
 

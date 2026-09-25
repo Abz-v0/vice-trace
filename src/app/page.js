@@ -39,6 +39,7 @@ const CASES = {
     correctChoice: 2,
     findings: 'Correct. The timestamp on the security camera was altered.',
     solution: 'The murder happened at 02:13 AM, not 04:15 AM. The suspect used the altered time to establish a fake alibi.',
+    campaignClue: 'The corrected time matches a restricted Port Arcadia freight transfer window.',
   },
   marina: {
     id: '002',
@@ -67,6 +68,7 @@ const CASES = {
     correctChoice: 0,
     findings: 'Correct. The reflected silhouette was composited into the water to place a witness at the marina.',
     solution: 'The dock was empty when the camera recorded the scene. The fabricated reflection was used to support a false witness statement and protect the boat owner.',
+    campaignClue: 'The boat owner’s holding company also appears on the restricted freight transfer paperwork.',
   },
   courier: {
     id: '003',
@@ -95,6 +97,7 @@ const CASES = {
     correctChoice: 0,
     findings: 'Correct. A second delivery scooter was cloned into the frame to make one courier appear to be in two places at once.',
     solution: 'The duplicate was used to validate an impossible delivery route. The real courier could not have reached the second pickup point in time.',
+    campaignClue: 'The courier’s altered route was authorized with an Internal Affairs override.',
   },
   penthouse: {
     id: '004',
@@ -123,6 +126,7 @@ const CASES = {
     correctChoice: 0,
     findings: 'Correct. The palm shadow was altered to make the image appear to have been recorded later in the morning.',
     solution: 'The genuine sunrise direction proves the photo was taken before the suspect’s claimed arrival. The altered shadow was meant to manufacture a later timestamp without changing the camera overlay.',
+    campaignClue: 'The penthouse alibi was arranged by the same freight broker named in the marina file.',
   },
   manifest: {
     id: '005',
@@ -151,6 +155,7 @@ const CASES = {
     correctChoice: 0,
     findings: 'Correct. The concealed route code exposed a container diversion that never appeared in the official shipping record.',
     solution: 'Route LT-47 directed the container away from Port Arcadia’s inspection lane. The folded corner was used to obscure the only surviving record of the diversion.',
+    campaignClue: 'The sealed audit trail identifies Deputy Commissioner Calder as the source of the override.',
   },
 };
 
@@ -188,7 +193,11 @@ const ANALYST_TRANSMISSIONS = {
 const loadDetectiveRecord = () => {
   if (typeof window === 'undefined') return { cases: {}, totalScore: 0 };
   try {
-    return JSON.parse(window.localStorage.getItem('vice-trace-detective-record')) || { cases: {}, totalScore: 0 };
+    const saved = JSON.parse(window.localStorage.getItem('vice-trace-detective-record'));
+    if (!saved || typeof saved.cases !== 'object' || saved.cases === null) return { cases: {}, totalScore: 0 };
+    const cases = Object.fromEntries(Object.entries(saved.cases).filter(([key, result]) => CASES[key] && result?.completed && Number.isFinite(result.bestScore)));
+    const totalScore = Object.values(cases).reduce((sum, result) => sum + result.bestScore, 0);
+    return { cases, totalScore };
   } catch {
     return { cases: {}, totalScore: 0 };
   }
@@ -229,6 +238,13 @@ export default function Home() {
   const caseStartedAtRef = useRef(null);
   const [detectiveRecord, setDetectiveRecord] = useState(loadDetectiveRecord);
   const currentCase = CASES[selectedCaseKey];
+  const completedCaseKeys = Object.keys(CASES).filter((caseKey) => detectiveRecord.cases?.[caseKey]?.completed);
+  const campaignComplete = completedCaseKeys.length === Object.keys(CASES).length;
+  const analystStatus = completedCaseKeys.length >= 4
+    ? 'VOSS // FINAL PACKET ASSEMBLED'
+    : completedCaseKeys.length >= 2
+      ? 'VOSS // AUDIT CHANNEL COMPROMISED'
+      : 'VOSS // ONLINE';
 
   const getAudioContext = () => {
     if (!audioContextRef.current && typeof window !== 'undefined') {
@@ -532,7 +548,11 @@ export default function Home() {
     const cases = { ...detectiveRecord.cases, [selectedCaseKey]: caseResult };
     const totalScore = Object.values(cases).reduce((total, result) => total + result.bestScore, 0);
     const nextRecord = { cases, totalScore };
-    window.localStorage.setItem('vice-trace-detective-record', JSON.stringify(nextRecord));
+    try {
+      window.localStorage.setItem('vice-trace-detective-record', JSON.stringify(nextRecord));
+    } catch (error) {
+      console.warn('Detective record could not be saved in this browser.', error);
+    }
     setDetectiveRecord(nextRecord);
   };
 
@@ -549,7 +569,10 @@ export default function Home() {
   };
 
   const handleShareReport = async () => {
-    const report = `VICE//TRACE case #001 closed by ${userName}. Score: ${caseScore}/100. Rank: ${getRank(caseScore)}. Can you find the lie?`;
+    const campaignScore = detectiveRecord.totalScore || caseScore;
+    const report = campaignComplete
+      ? `VICE//TRACE full evidence ledger decoded by ${userName}. Campaign rank: ${getRank(Math.round(campaignScore / Object.keys(CASES).length))}. Five cases closed. The Calder override is exposed.`
+      : `VICE//TRACE Case #${currentCase.id} closed by ${userName}. Score: ${caseScore}/100. Rank: ${getRank(caseScore)}. Can you find the lie?`;
     try {
       if (navigator.share) {
         await navigator.share({ title: 'VICE//TRACE Case Report', text: report });
@@ -682,12 +705,24 @@ export default function Home() {
             <p className="mt-5 text-sm text-cyan-100/70">Select an active investigation. Your best score for each completed case is stored on this device.</p>
             <div className="analyst-signal mt-4 flex items-center gap-3 border border-pink-500/30 bg-pink-950/20 px-3 py-2 text-xs text-pink-100">
               <span className="animate-pulse text-pink-400">●</span>
-              <span><strong>ANALYST M. VOSS // ONLINE</strong> — Five evidence packets await review.</span>
+      <span><strong>ANALYST M. VOSS // {analystStatus.split('// ')[1]}</strong> — {completedCaseKeys.length >= 2 ? 'Someone inside VCPD is editing the record. Keep going.' : 'Five evidence packets await review.'}</span>
             </div>
             <div className="mt-5" aria-label={`${completedCases} of ${Object.keys(CASES).length} cases closed`}>
               <div className="mb-2 flex justify-between text-[10px] tracking-widest text-cyan-200/70"><span>INVESTIGATION PROGRESS</span><span>{completedCases} / {Object.keys(CASES).length}</span></div>
               <div className="h-1.5 overflow-hidden bg-zinc-800"><div className="h-full bg-gradient-to-r from-cyan-400 to-pink-500 transition-[width] duration-700" style={{ width: `${(completedCases / Object.keys(CASES).length) * 100}%` }} /></div>
             </div>
+            <div className="mt-5 flex flex-col gap-3 border border-cyan-400/25 bg-cyan-950/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[10px] tracking-[0.2em] text-cyan-300">FORENSIC WORKSTATION // POWERED BY UNLAYER IMAGE EDITOR</p>
+                <p className="mt-1 text-xs text-zinc-300">Every case is solved in the editor: enhance, zoom, mark, annotate, then submit your evidence.</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 text-[9px] tracking-wider text-pink-200">
+                {['ENHANCE', 'ZOOM', 'MARK', 'ANNOTATE', 'REDACT'].map((tool) => <span key={tool} className="border border-pink-400/30 px-2 py-1">{tool}</span>)}
+              </div>
+            </div>
+            {campaignComplete && <button onClick={() => { playSound('success'); setGameState('finale'); }} className="finale-unlock btn-press mt-5 w-full border border-amber-300/70 bg-amber-950/40 px-4 py-4 text-left text-amber-100 hover:bg-amber-300 hover:text-black">
+              <span className="block text-[10px] tracking-[0.25em]">ALL FIVE EXHIBITS VERIFIED</span><span className="mt-1 block text-lg font-bold">[ DECRYPT VOSS’S FINAL TRANSMISSION ]</span>
+            </button>}
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Object.entries(CASES).map(([caseKey, caseFile]) => {
                 const result = detectiveRecord.cases?.[caseKey];
@@ -708,6 +743,36 @@ export default function Home() {
                 );
               })}
             </div>
+          </section>
+        </main>
+      );
+    }
+
+    if (gameState === 'finale') {
+      return (
+        <main className="crt-effect finale-screen min-h-screen bg-black bg-cover bg-center text-white flex flex-col items-center justify-center p-5 sm:p-8" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.88), rgba(0,0,0,0.96)), url('/bg.jpg')" }}>
+          <section className="w-full max-w-4xl border border-amber-300/60 bg-black/90 p-5 shadow-[0_0_40px_rgba(251,191,36,0.12)] sm:p-8">
+            <p className="text-[10px] tracking-[0.3em] text-amber-300">VCPD INTERNAL AFFAIRS // ENCRYPTION BROKEN</p>
+            <h1 className="mt-3 text-3xl font-bold tracking-widest text-amber-100 sm:text-5xl">THE EVIDENCE LEDGER</h1>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-zinc-300">Five altered scenes. Five stories that were supposed to stay separate. Your case board links them to the same Port Arcadia freight transfer and the same override signature.</p>
+
+            <div className="campaign-ledger mt-6 grid gap-2 sm:grid-cols-2">
+              {Object.entries(CASES).map(([caseKey, caseFile], index) => (
+                <div key={caseKey} className="ledger-entry flex gap-3 border border-amber-200/20 bg-amber-950/10 p-3" style={{ animationDelay: `${index * 90}ms` }}>
+                  <span className="text-amber-300">0{index + 1}</span><div><strong className="block text-sm text-amber-100">{caseFile.title}</strong><span className="text-xs text-zinc-300">{caseFile.campaignClue}</span></div>
+                </div>
+              ))}
+            </div>
+
+            <div className="analyst-transmission mt-6 border-l-2 border-pink-400 bg-pink-950/20 p-4 text-sm leading-relaxed text-pink-100">
+              <p className="mb-2 text-[10px] tracking-[0.22em] text-pink-300">LIVE CHANNEL // M. VOSS</p>
+              <p>“Calder signed the LT-47 override. I found the authorization trail before the first case, but my access was cut. I needed an investigator outside the chain to make the evidence impossible to bury. You did that. I’m transmitting the ledger to the state bureau now. Get clear of the terminal.”</p>
+            </div>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <button onClick={handleShareReport} className="btn-press flex-1 border border-amber-300/50 px-4 py-3 text-sm text-amber-100 hover:bg-amber-300 hover:text-black">[ SHARE FINAL LEDGER ]</button>
+              <button onClick={() => { playSound('click'); setGameState('files'); }} className="btn-press flex-1 bg-cyan-400 px-4 py-3 text-sm font-bold text-black hover:bg-pink-400">[ RETURN TO CASE FILES ]</button>
+            </div>
+            {shareStatus && <p role="status" className="mt-3 text-xs text-cyan-200">{shareStatus}</p>}
           </section>
         </main>
       );
@@ -735,6 +800,7 @@ export default function Home() {
                 <div className="analyst-transmission border-l-2 border-pink-500 bg-pink-950/20 px-3 py-3 text-sm text-pink-100">
                   <p className="mb-1 text-[10px] tracking-widest text-pink-400">SECURE MESSAGE // ANALYST M. VOSS</p>
                   <p>“{ANALYST_TRANSMISSIONS[selectedCaseKey].briefing}”</p>
+                  {completedCaseKeys.length > 0 && <p className="mt-2 border-t border-pink-400/20 pt-2 text-pink-200">“{completedCaseKeys.length >= 4 ? 'I can finally name the hand behind the override. Finish the ledger and I will send everything.' : 'That exhibit connects to another packet. I am tracing an Internal Affairs override—keep this channel open.'}”</p>}
                 </div>
               </div>
               <div className="relative min-h-48 overflow-hidden border border-pink-500/40 bg-zinc-950">
@@ -928,7 +994,8 @@ export default function Home() {
   if (gameState === 'solved') {
     return (
       <main className="crt-effect glitch-in min-h-screen bg-black bg-cover bg-center text-red-400 flex flex-col items-center justify-center p-8" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url('/bg.jpg')" }}>
-        <div className="border-2 border-green-500 p-8 max-w-2xl shadow-[0_0_30px_rgba(34,197,94,0.4)] bg-black/80 text-center">
+        <div className="case-report-card relative border-2 border-green-500 p-8 max-w-2xl shadow-[0_0_30px_rgba(34,197,94,0.4)] bg-black/80 text-center">
+          <span className="case-closed-stamp" aria-label="Case closed">CASE CLOSED</span>
           <h1 className="text-4xl font-bold mb-2 text-green-500 tracking-widest glitch-text">CASE CLOSED: #{currentCase.id}</h1>
           
           <p className="text-xl text-pink-500 font-bold tracking-widest mb-6 animate-pulse">
@@ -946,6 +1013,10 @@ export default function Home() {
             <p><span className="font-bold text-green-400">FINDINGS:</span> {currentCase.findings}</p>
             <p className="leading-relaxed">By using the Enhance tool and ZOOM view, you isolated the visual inconsistency in the evidence.</p>
             <p className="leading-relaxed">{currentCase.solution}</p>
+            <div className="campaign-clue border-l-2 border-amber-300 bg-amber-950/20 px-3 py-2 text-sm text-amber-100">
+              <p className="mb-1 text-[10px] tracking-[0.2em] text-amber-300">CAMPAIGN THREAD // {completedCaseKeys.length} OF 5 FRAGMENTS</p>
+              <p>{currentCase.campaignClue}</p>
+            </div>
             <div className="analyst-transmission border-l-2 border-cyan-400 bg-cyan-950/30 px-3 py-3 text-sm text-cyan-100">
               <p className="mb-1 text-[10px] tracking-widest text-cyan-300">DEBRIEF // ANALYST M. VOSS</p>
               <p>“{ANALYST_TRANSMISSIONS[selectedCaseKey].debrief}”</p>
